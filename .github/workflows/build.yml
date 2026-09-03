@@ -1,0 +1,70 @@
+name: Rebuild site
+
+on:
+  schedule:
+    - cron: "0 * * * *"        # hourly
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "badminton_stats/**"
+      - "site/**"
+      - "data/players.csv"
+      - "data/matches.csv"
+      - "build.py"
+      - "requirements.txt"
+      - ".github/workflows/build.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rebuild-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Unit tests
+        run: pytest -q
+
+      - name: Build site
+        env:
+          SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
+        run: |
+          # With the SHEET_CSV_URL repository variable set, matches come from the Google Sheet.
+          # Without it, build.py uses data/matches.csv committed in the repo.
+          if [ -n "$SHEET_CSV_URL" ]; then
+            python build.py --csv "$SHEET_CSV_URL" --check
+          else
+            echo "SHEET_CSV_URL not set, building from data/matches.csv"
+            if [ ! -f data/matches.csv ]; then
+              echo "::error::data/matches.csv is missing. Enter matches with enter_matches.py and commit the file."
+              exit 1
+            fi
+            python build.py --check
+          fi
+
+      - name: Commit docs/ if it changed
+        run: |
+          # Ignore the timestamp line so an unchanged dataset produces no commit.
+          if git diff --quiet -I '"generated_at":"[^"]*"' -- docs/index.html && [ -z "$(git status --porcelain docs)" ]; then
+            echo "Site unchanged, nothing to commit."
+            git checkout -- docs/index.html
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git commit -m "Rebuild site $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
