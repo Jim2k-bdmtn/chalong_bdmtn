@@ -57,12 +57,15 @@ jobs:
 
       - name: Commit docs/ if it changed
         run: |
-          # Ignore the timestamp line so an unchanged dataset produces no commit.
-          if git diff --quiet -I '"generated_at":"[^"]*"' -- docs/index.html && [ -z "$(git status --porcelain docs)" ]; then
+          # Compare with the committed page ignoring the timestamp, so an unchanged
+          # dataset produces no commit. (The JSON is one line, so `git diff -I` cannot do this.)
+          strip() { sed -E 's/"generated_at":"[^"]*"//'; }
+          if git show HEAD:docs/index.html | strip | cmp -s - <(strip < docs/index.html); then
             echo "Site unchanged, nothing to commit."
             git checkout -- docs/index.html
             exit 0
           fi
+          echo "Site changed, committing."
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/index.html
