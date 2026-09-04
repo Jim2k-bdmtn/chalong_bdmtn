@@ -11,7 +11,7 @@ const I18N = {
     // home
     leaderboard: "Leaderboard",
     leaderboard_sub: "Points and Elo side by side.",
-    leaderboard_tap: "Tap a row for the player page.",
+    leaderboard_tap: "Tap a row for the player page or scroll down to see more global data.",
     rank: "#",
     player: "Player",
     points: "Pts",
@@ -115,7 +115,7 @@ const I18N = {
   },
 
   th: {
-    leaderboard_sub: "แต้มและ Elo เทียบกันข้างกัน แตะที่แถวเพื่อเปิดหน้าผู้เล่น",
+    leaderboard_sub: "คะแนนและ Elo แสดงเคียงข้างกัน แตะที่แถวเพื่อดูหน้าผู้เล่น หรือเลื่อนลงเพื่อดูข้อมูลรวมเพิ่มเติม",
     tip_points: "แต้มลีกอย่างเป็นทางการ: ชนะได้ +1 แพ้เสีย −1 ต่อแมตช์",
 tip_elo: "คะแนนวัดฝีมือ ทุกคนเริ่มที่ {start} ชนะคู่ที่เก่งกว่าจะได้แต้มมากกว่าชนะคู่ที่อ่อนกว่า และแพ้ให้คู่ที่อ่อนกว่าจะเสียแต้มมากกว่า คะแนนของทีมคือค่าเฉลี่ยของผู้เล่นทั้งสองคน",
 tip_elo_rank: "อันดับในตาราง Elo เฉพาะผู้เล่นที่ลงแข่งอย่างน้อย {n} แมตช์เท่านั้นที่ถูกจัดอันดับ ที่เหลือถือเป็นอันดับชั่วคราว",
