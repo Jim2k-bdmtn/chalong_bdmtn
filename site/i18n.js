@@ -41,6 +41,14 @@ const I18N = {
     scatter_sub: "Every player who has played. Tap a dot for the name.",
     win_rate: "Win rate",
     matches_played: "Matches",
+    matchup: "Matchup predictor",
+    matchup_sub: "Pick two pairs and see each pair's win chance from today's Elo.",
+    matchup_pick: "— pick —",
+    matchup_team: "Pair {n}",
+    matchup_avg: "avg Elo",
+    matchup_need_four: "Pick four different players.",
+    matchup_dup: "{name} is picked twice.",
+    matchup_if_win: "if they win",
 
     // player page
     pick_player: "Pick a player",
@@ -111,7 +119,8 @@ const I18N = {
     tip_streaks_loss: "The longest run of consecutive losses any player has had, all time.",
     tip_points_race: "League points (+1 win, −1 loss) after every match, for the players currently at the top of the points table.",
     tip_scatter: "Each dot is a player: how many matches they played (across) against the share of them they won (up).",
-    tip_delta: "How much Elo each player gained or lost from this match."
+    tip_delta: "How much Elo each player gained or lost from this match.",
+    tip_matchup: "Each pair's rating is the average of its two players' current Elo. The win chance is the standard Elo formula on the two pair ratings, the same one used before every real match. Provisional players count with their current rating."
   },
 
   th: {
@@ -145,5 +154,7 @@ tip_streaks_loss: "สถิติแพ้ติดต่อกันยาว�
 tip_points_race: "แต้มลีก (ชนะ +1 แพ้ −1) หลังจบแต่ละแมตช์ ของผู้เล่นที่อยู่หัวตารางแต้มในขณะนี้",
 tip_scatter: "แต่ละจุดคือผู้เล่นหนึ่งคน: จำนวนแมตช์ที่ลงแข่ง (แกนนอน) เทียบกับสัดส่วนแมตช์ที่ชนะ (แกนตั้ง)",
 tip_delta: "Elo ที่ผู้เล่นแต่ละคนได้หรือเสียจากแมตช์นี้",
+matchup_sub: "เลือกสองคู่ แล้วดูโอกาสชนะของแต่ละคู่จากคะแนน Elo วันนี้",
+tip_matchup: "คะแนนของแต่ละคู่คือค่าเฉลี่ย Elo ปัจจุบันของผู้เล่นทั้งสองคน โอกาสชนะคำนวณด้วยสูตร Elo มาตรฐานจากคะแนนของสองคู่ ซึ่งเป็นสูตรเดียวกับที่ใช้ก่อนทุกแมตช์จริง ผู้เล่นอันดับชั่วคราวใช้คะแนนปัจจุบันของตน",
   }
 };

@@ -171,6 +171,55 @@
       </div>`;
   }
 
+  /* ---------- matchup predictor: two pairs, win chance from today's Elo ---------- */
+  const MATCHUP_KEY = 'matchup';
+  function loadMatchup() {
+    try { const v = JSON.parse(localStorage.getItem(MATCHUP_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  }
+  function matchupPair(team) {
+    const saved = loadMatchup();
+    const sel = i => {
+      const cur = saved[team * 2 + i] || '';
+      const opts = PLAYER_NAMES.map(n => {
+        const p = DATA.players[n];
+        const label = `${n} · ${Math.round(p.elo)}${p.provisional ? ' (' + t('provisional') + ')' : ''}`;
+        return `<option value="${esc(n)}"${n === cur ? ' selected' : ''}>${esc(label)}</option>`;
+      }).join('');
+      return `<select data-slot="${team * 2 + i}" aria-label="${esc(t('matchup_team', { n: team + 1 }))}">
+        <option value="">${esc(t('matchup_pick'))}</option>${opts}</select>`;
+    };
+    return `<div class="pair"><div class="label">${esc(t('matchup_team', { n: team + 1 }))}</div>${sel(0)}${sel(1)}<div class="avg" data-avg="${team}"></div></div>`;
+  }
+  function initMatchup() {
+    const sels = Array.from($app.querySelectorAll('.matchup select'));
+    const out = document.getElementById('matchup-result');
+    const avgEl = i => $app.querySelector(`[data-avg="${i}"]`);
+    const kFor = p => (p.matches < CFG.provisional_until ? CFG.k_new : CFG.k_established);
+    function update() {
+      const names = sels.map(s => s.value);
+      try { localStorage.setItem(MATCHUP_KEY, JSON.stringify(names)); } catch (e) { /* ignore */ }
+      const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);
+      const avg = ps => ps.reduce((a, p) => a + p.elo, 0) / ps.length;
+      [0, 1].forEach(i => { const ps = team(i); avgEl(i).textContent = ps.length ? `${t('matchup_avg')} ${Math.round(avg(ps))}` : ''; });
+      const picked = names.filter(Boolean);
+      const dup = picked.find((n, i) => picked.indexOf(n) !== i);
+      if (dup) { out.innerHTML = `<div class="msg">${esc(t('matchup_dup', { name: dup }))}</div>`; return; }
+      if (picked.length < 4) { out.innerHTML = `<div class="msg">${esc(t('matchup_need_four'))}</div>`; return; }
+      const A = team(0), B = team(1);
+      const ra = avg(A), rb = avg(B);
+      const pa = 1 / (1 + Math.pow(10, (rb - ra) / 400));
+      const pctA = Math.round(pa * 100), pctB = 100 - pctA;
+      // Elo each player would gain with a win, using their own K (same formula as the real matches).
+      const gain = (ps, p) => ps.map(pl => signed(kFor(pl) * (1 - p), 0)).join(' / ');
+      out.innerHTML = `
+        <div class="pcts"><span class="a-ink">${pctA}%</span><span class="b-ink">${pctB}%</span></div>
+        <div class="bar"><div class="a" style="width:${pa * 100}%"></div><div class="b" style="flex:1"></div></div>
+        <div class="deltas"><span>${gain(A, pa)} ${esc(t('matchup_if_win'))}</span><span>${gain(B, 1 - pa)} ${esc(t('matchup_if_win'))}</span></div>`;
+    }
+    sels.forEach(s => s.addEventListener('change', update));
+    update();
+  }
+
   function renderHome() {
     const rows = DATA.leaderboard_points.map(name => {
       const p = DATA.players[name];
@@ -202,6 +251,17 @@
         <tbody>${rows || `<tr><td colspan="6" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
       </table></div>
 
+      <h2>${esc(t('matchup'))}${tip('tip_matchup')}</h2>
+      <p class="sub">${esc(t('matchup_sub'))}<br>${esc(tTh('matchup_sub'))}</p>
+      <div class="card">
+        <div class="matchup">
+          ${matchupPair(0)}
+          <div class="vs">vs</div>
+          ${matchupPair(1)}
+        </div>
+        <div class="matchup-result" id="matchup-result"></div>
+      </div>
+
       <h2>${esc(t('upsets'))}${tip('tip_upsets')}</h2>
       <p class="sub">${esc(t('upsets_sub'))}</p>
       ${upsets || `<div class="empty">${esc(t('no_matches'))}</div>`}
@@ -228,6 +288,7 @@
     $app.querySelectorAll('tr.row-link').forEach(tr => {
       tr.addEventListener('click', e => { if (!e.target.closest('.tip')) location.hash = hashFor(tr.dataset.player); });
     });
+    initMatchup();
     scatterChart('scatter');
     pointsRaceChart('points-race');
   }
