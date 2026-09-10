@@ -238,6 +238,8 @@
         <td class="num">${eloRank}</td></tr>`;
     }).join('');
 
+    const lastMatches = DATA.matches.slice(-CFG.home_last_matches).reverse().map(m => matchCard(m)).join('');
+
     const upsets = DATA.upsets.slice(0, CFG.home_upsets).map(u => `
       <div class="match">
         <div class="head"><span>${esc(u.date)}</span><span>${esc(t('win_chance'))} <b>${pct(u.winner_prob)}</b> ${u.provisional ? provisionalBadge() : ''}</span></div>
@@ -255,6 +257,10 @@
           <th class="num">${esc(t('elo_rank'))}${tip('tip_elo_rank', { n: CFG.provisional_until })}</th></tr></thead>
         <tbody>${rows || `<tr><td colspan="6" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
       </table></div>
+
+      <h2>${esc(t('last_matches'))}</h2>
+      <p class="sub">${esc(t('last_matches_sub', { n: CFG.home_last_matches }))}<br>${esc(tTh('last_matches_sub', { n: CFG.home_last_matches }))}</p>
+      ${lastMatches || `<div class="empty">${esc(t('no_matches'))}</div>`}
 
       <h2>${esc(t('matchup'))}${tip('tip_matchup')}</h2>
       <p class="sub">${esc(t('matchup_sub'))}<br>${esc(tTh('matchup_sub'))}</p>

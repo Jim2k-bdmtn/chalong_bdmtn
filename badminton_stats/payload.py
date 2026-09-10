@@ -65,6 +65,7 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "min_opponent_matches": config.MIN_OPPONENT_MATCHES,
             "form_length": config.FORM_LENGTH,
             "home_upsets": config.HOME_UPSETS,
+            "home_last_matches": config.HOME_LAST_MATCHES,
             "top_streaks": config.TOP_STREAKS,
             "top_partners": config.TOP_PARTNERS,
             "top_matches": config.TOP_MATCHES,

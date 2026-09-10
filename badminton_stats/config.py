@@ -8,6 +8,7 @@ PROVISIONAL_UNTIL = 5   # players with fewer matches than this are "provisional"
 MIN_OPPONENT_MATCHES = 5  # for nemesis / victim
 FORM_LENGTH = 10          # results shown in "form"
 HOME_UPSETS = 5           # upsets shown on the home page
+HOME_LAST_MATCHES = 3     # most recent matches shown on the home page
 TOP_STREAKS = 3           # longest win / loss streaks shown on the home page
 TOP_PARTNERS = 5          # most-played-with partners shown per player
 TOP_MATCHES = 3           # hardest wins / easiest losses shown per player

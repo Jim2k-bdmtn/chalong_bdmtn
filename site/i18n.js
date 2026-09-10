@@ -49,6 +49,8 @@ const I18N = {
     matchup_need_four: "Pick four different players.",
     matchup_dup: "{name} is picked twice.",
     matchup_if_win: "if they win",
+    last_matches: "Last matches",
+    last_matches_sub: "The {n} most recent matches, newest first.",
 
     // player page
     pick_player: "Pick a player",
@@ -153,6 +155,7 @@ tip_streaks_loss: "สถิติแพ้ติดต่อกันยาว�
 tip_points_race: "แต้มลีก (ชนะ +1 แพ้ −1) หลังจบแต่ละแมตช์ ของผู้เล่นที่อยู่หัวตารางแต้มในขณะนี้",
 tip_scatter: "แต่ละจุดคือผู้เล่นหนึ่งคน: จำนวนแมตช์ที่ลงแข่ง (แกนนอน) เทียบกับสัดส่วนแมตช์ที่ชนะ (แกนตั้ง)",
 tip_delta: "Elo ที่ผู้เล่นแต่ละคนได้หรือเสียจากแมตช์นี้",
+last_matches_sub: "{n} แมตช์ล่าสุด เรียงจากใหม่สุด",
 matchup_sub: "เลือกสองคู่ แล้วดูโอกาสชนะของแต่ละคู่จากคะแนน Elo วันนี้",
 tip_matchup: "คะแนนของแต่ละคู่คือค่าเฉลี่ย Elo ปัจจุบันของผู้เล่นทั้งสองคน โอกาสชนะคำนวณด้วยสูตร Elo มาตรฐานจากคะแนนของสองคู่ ซึ่งเป็นสูตรเดียวกับที่ใช้ก่อนทุกแมตช์จริง ผู้เล่นอันดับชั่วคราวใช้คะแนนปัจจุบันของตน",
   }
