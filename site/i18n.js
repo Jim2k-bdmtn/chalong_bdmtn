@@ -80,7 +80,6 @@ const I18N = {
     hardest_wins: "Hardest wins",
     easiest_losses: "Easiest losses",
     none_yet: "None yet.",
-    elo_chart: "Elo over time",
     points_chart: "Points over time",
     last_played: "Last played",
     peak_elo: "Peak Elo",

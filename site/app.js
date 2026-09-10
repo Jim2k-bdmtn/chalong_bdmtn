@@ -172,12 +172,17 @@
   }
 
   /* ---------- matchup predictor: two pairs, win chance from today's Elo ---------- */
-  const MATCHUP_KEY = 'matchup';
-  function loadMatchup() {
-    try { const v = JSON.parse(localStorage.getItem(MATCHUP_KEY) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+  const MATCHUP_MIN_MATCHES = 5;
+  function randomMatchup() {
+    // Four different players with at least MATCHUP_MIN_MATCHES matches, shuffled (Fisher-Yates).
+    const pool = PLAYER_NAMES.filter(n => DATA.players[n].matches >= MATCHUP_MIN_MATCHES);
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, 4);
   }
-  function matchupPair(team) {
-    const saved = loadMatchup();
+  function matchupPair(team, saved) {
     const sel = i => {
       const cur = saved[team * 2 + i] || '';
       const opts = PLAYER_NAMES.map(n => {
@@ -197,7 +202,6 @@
     const kFor = p => (p.matches < CFG.provisional_until ? CFG.k_new : CFG.k_established);
     function update() {
       const names = sels.map(s => s.value);
-      try { localStorage.setItem(MATCHUP_KEY, JSON.stringify(names)); } catch (e) { /* ignore */ }
       const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);
       const avg = ps => ps.reduce((a, p) => a + p.elo, 0) / ps.length;
       [0, 1].forEach(i => { const ps = team(i); avgEl(i).textContent = ps.length ? `${t('matchup_avg')} ${Math.round(avg(ps))}` : ''; });
@@ -221,6 +225,7 @@
   }
 
   function renderHome() {
+    const randomPick = randomMatchup();
     const rows = DATA.leaderboard_points.map(name => {
       const p = DATA.players[name];
       const eloRank = p.rank_elo != null ? p.rank_elo : provisionalBadge();
@@ -255,9 +260,9 @@
       <p class="sub">${esc(t('matchup_sub'))}<br>${esc(tTh('matchup_sub'))}</p>
       <div class="card">
         <div class="matchup">
-          ${matchupPair(0)}
+          ${matchupPair(0, randomPick)}
           <div class="vs">vs</div>
-          ${matchupPair(1)}
+          ${matchupPair(1, randomPick)}
         </div>
         <div class="matchup-result" id="matchup-result"></div>
       </div>
@@ -363,8 +368,6 @@
       </div>
       <div class="card"><div class="label" style="font-size:12px;color:var(--muted)">${esc(t('form', { n: CFG.form_length }))}${tip('tip_form', { n: CFG.form_length })}</div>${form}</div>
 
-      <h2>${esc(t('elo_chart'))}</h2>
-      <div class="card"><div id="elo-chart" class="chart"></div></div>
       <h2>${esc(t('points_chart'))}</h2>
       <div class="card"><div id="points-chart" class="chart"></div></div>
 
@@ -391,7 +394,6 @@
       ${recent.map(m => matchCard(m, name)).join('') || `<div class="card empty">${esc(t('none_yet'))}</div>`}
       `;
 
-    lineChart('elo-chart', p.elo_history, '#1f6feb');
     lineChart('points-chart', p.points_history, '#1a8f4c');
   }
 
