@@ -235,6 +235,8 @@
         <td class="num"><b>${p.points > 0 ? '+' : ''}${p.points}</b></td>
         <td class="num">${p.wins}-${p.losses}</td>
         <td class="num">${Math.round(p.elo)}</td>
+        <td class="num">${p.level == null ? t('none') : Math.round(p.level)}</td>
+        <td class="num">${p.rank_level == null ? t('none') : p.rank_level}</td>
         <td class="num">${eloRank}</td></tr>`;
     }).join('');
 
@@ -254,8 +256,10 @@
           <th class="num">${esc(t('points'))}${tip('tip_points')}</th>
           <th class="num">${esc(t('record'))}${tip('tip_record')}</th>
           <th class="num">${esc(t('elo'))}${tip('tip_elo', { start: CFG.start_rating })}</th>
+          <th class="num">${esc(t('level'))}${tip('tip_level', { n: CFG.level_min_matches })}</th>
+          <th class="num">${esc(t('level_rank'))}${tip('tip_level_rank', { n: CFG.level_min_matches })}</th>
           <th class="num">${esc(t('elo_rank'))}${tip('tip_elo_rank', { n: CFG.provisional_until })}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="6" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="8" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
       </table></div>
 
       <h2>${esc(t('last_matches'))}</h2>
@@ -362,6 +366,7 @@
         ${statCard(t('win_rate'), pct(p.win_rate), { tip: tip('tip_win_rate') })}
         ${statCard(t('points'), pointsVal, { tip: tip('tip_points') })}
         ${statCard(t('elo_rating'), eloVal, { tip: tip('tip_elo', { start: CFG.start_rating }) })}
+        ${statCard(t('level'), p.level == null ? t('none') : `${Math.round(p.level)} <small>#${p.rank_level}</small>`, { tip: tip('tip_level', { n: CFG.level_min_matches }) })}
         ${statCard(t('current_streak'), streak, { tip: tip('tip_streak') })}
         ${statCard(t('longest_win'), p.longest_win, { cls: 'win' })}
         ${statCard(t('longest_loss'), p.longest_loss, { cls: 'loss' })}
