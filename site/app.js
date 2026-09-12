@@ -199,7 +199,7 @@
     const sels = Array.from($app.querySelectorAll('.matchup select'));
     const out = document.getElementById('matchup-result');
     const avgEl = i => $app.querySelector(`[data-avg="${i}"]`);
-    const kFor = p => (p.matches < CFG.provisional_until ? CFG.k_new : CFG.k_established);
+    const kFor = p => (p.matches < CFG.k_new_until ? CFG.k_new : CFG.k_established);
     function update() {
       const names = sels.map(s => s.value);
       const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);

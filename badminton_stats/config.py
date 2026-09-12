@@ -1,9 +1,10 @@
 """Tunable constants. Everything the stats depend on lives here."""
 
 START_RATING = 1000.0
-K_NEW = 48          # K-factor while a player has fewer than PROVISIONAL_UNTIL matches
+K_NEW = 48          # K-factor while a player has fewer than K_NEW_UNTIL matches
 K_ESTABLISHED = 32  # K-factor afterwards
-PROVISIONAL_UNTIL = 5   # players with fewer matches than this are "provisional"
+K_NEW_UNTIL = 5     # matches played with the higher K-factor (changing this changes every rating)
+PROVISIONAL_UNTIL = 10  # players with fewer matches than this are "provisional": no Elo rank
 
 MIN_OPPONENT_MATCHES = 5  # for nemesis / victim
 FORM_LENGTH = 10          # results shown in "form"

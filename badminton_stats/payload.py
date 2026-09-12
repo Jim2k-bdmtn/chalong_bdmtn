@@ -61,6 +61,7 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "start_rating": config.START_RATING,
             "k_new": config.K_NEW,
             "k_established": config.K_ESTABLISHED,
+            "k_new_until": config.K_NEW_UNTIL,
             "provisional_until": config.PROVISIONAL_UNTIL,
             "min_opponent_matches": config.MIN_OPPONENT_MATCHES,
             "form_length": config.FORM_LENGTH,

@@ -21,7 +21,7 @@ def expected(r_a: float, r_b: float) -> float:
 
 
 def k_factor(n_matches_before: int) -> int:
-    return config.K_NEW if n_matches_before < config.PROVISIONAL_UNTIL else config.K_ESTABLISHED
+    return config.K_NEW if n_matches_before < config.K_NEW_UNTIL else config.K_ESTABLISHED
 
 
 @dataclass

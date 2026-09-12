@@ -18,8 +18,8 @@ def test_expected_symmetry_and_direction():
 
 def test_k_schedule_switches_after_ten_matches():
     assert k_factor(0) == config.K_NEW
-    assert k_factor(config.PROVISIONAL_UNTIL - 1) == config.K_NEW
-    assert k_factor(config.PROVISIONAL_UNTIL) == config.K_ESTABLISHED
+    assert k_factor(config.K_NEW_UNTIL - 1) == config.K_NEW
+    assert k_factor(config.K_NEW_UNTIL) == config.K_ESTABLISHED
     assert k_factor(500) == config.K_ESTABLISHED
 
 
@@ -77,8 +77,8 @@ def test_replay_marks_provisional_and_ratings_stay_finite():
     assert not state.is_provisional("a")
     assert state.is_provisional("zzz")
     assert all(math.isfinite(v) for v in state.rating.values())
-    # K drops to 32 once a player has PROVISIONAL_UNTIL matches behind them
-    n = config.PROVISIONAL_UNTIL
+    # K drops to 32 once a player has K_NEW_UNTIL matches behind them
+    n = config.K_NEW_UNTIL
     assert results[n - 1].k["a"] == 48 and results[n].k["a"] == 32
 
 

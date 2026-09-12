@@ -154,7 +154,7 @@ Everything lives in `badminton_stats/`; constants are in `config.py`.
   `delta = K × (result − expected)` with K = 48 for their first 5 matches, 32 afterwards.
   Teammates share `(result − expected)`, so their deltas are equal whenever their K is equal, and
   `Σ delta / K` over the four players is always zero.
-- **Provisional**: fewer than 5 matches. Elo still updates, but the player has no Elo rank yet.
+- **Provisional**: fewer than 10 matches. Elo still updates, but the player has no Elo rank yet.
 - **Partners**: the 5 most-played-with partners, with matches, wins, *expected wins* (sum of the
   pre-match win probability of the pair) and the difference.
 - **Opponents**: most faced, nemesis (lowest win %, min 5 meetings), favourite victim (highest win %, min 5).
