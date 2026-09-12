@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT))
 
 from tests import fake_season  # noqa: E402
 from badminton_stats import config  # noqa: E402
+from badminton_stats.level import fit_levels  # noqa: E402
 from badminton_stats.load import load_matches, load_players  # noqa: E402
 from badminton_stats.payload import build_payload, replay_frame  # noqa: E402
 from badminton_stats.render import render  # noqa: E402
@@ -35,14 +36,16 @@ def test_fake_data_shape(season):
     assert df["score_a"].isna().sum() > 10          # some blank scores survive
 
 
-def test_elo_deltas_zero_sum_every_match(season):
+def test_refit_matches_full_season_fit_and_moves_the_right_way(season):
     _, df, _ = season
-    results, _, _ = replay_frame(df)
+    results, state, _ = replay_frame(df)
+    fresh = fit_levels([(r.team_a, r.team_b, r.winner) for r in results], state.rating.keys())
+    for p, v in fresh.items():
+        assert state.rating[p] == pytest.approx(v, abs=1e-3)
     for r in results:
-        assert sum(r.delta[p] / r.k[p] for p in r.players) == pytest.approx(0.0, abs=1e-9)
-        same_k = len({r.k[p] for p in r.players}) == 1
-        if same_k:
-            assert sum(r.delta.values()) == pytest.approx(0.0, abs=1e-9)
+        assert all(r.delta[p] > 0 for p in r.winners)
+        assert all(r.delta[p] < 0 for p in r.losers)
+        assert 0.0 < r.p_a < 1.0
 
 
 def test_provisional_players_excluded_from_elo_ranking(season):

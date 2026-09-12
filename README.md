@@ -149,11 +149,13 @@ python -m http.server -d docs 8000
 Everything lives in `badminton_stats/`; constants are in `config.py`.
 
 - **League points**: +1 per win, −1 per loss, per player. The official ranking.
-- **Elo (doubles)**: everyone starts at 1000. Team rating = mean of the two players.
-  `expected(A) = 1 / (1 + 10^((R_B − R_A) / 400))`. Each player gets
-  `delta = K × (result − expected)` with K = 48 for their first 5 matches, 32 afterwards.
-  Teammates share `(result − expected)`, so their deltas are equal whenever their K is equal, and
-  `Σ delta / K` over the four players is always zero.
+- **Elo (doubles, season fit)**: everyone starts at 1000. Team rating = mean of the two players,
+  `expected(A) = 1 / (1 + 10^((R_B − R_A) / 400))`. Instead of the classic K-factor walk, the
+  ratings are a Bradley-Terry fit over *all* matches at once (`level.py`): the set of ratings that best
+  explains every result, with a mild prior pulling everyone towards 1000 (`LEVEL_PRIOR_SD`) so thin
+  records stay near the middle. The build refits after each match; a match's "delta" is how much a
+  player's fitted rating moved when that match was added, and its "win chance" uses the fit before it.
+  The classic engine (`elo.py`, K = 48/32) is kept for reference and tests but no longer drives the site.
 - **Provisional**: fewer than 10 matches. Elo still updates, but the player has no Elo rank yet.
 - **Partners**: the 5 most-played-with partners, with matches, wins, *expected wins* (sum of the
   pre-match win probability of the pair) and the difference.
@@ -170,7 +172,7 @@ Everything lives in `badminton_stats/`; constants are in `config.py`.
   (today's Elo, averaged per match).
 - **Ordering**: matches are sorted by date; same-day matches keep the order they have in the file/sheet.
 
-Sanity checks (`python build.py --check`): per-match deltas are zero-sum (weighted by 1/K),
+Sanity checks (`python build.py --check`): the match-by-match refit ends at the full-season fit,
 provisional players are absent from the Elo ranking, and the top five by Elo is printed.
 
 ## Layout

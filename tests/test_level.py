@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from badminton_stats import config  # noqa: E402
-from badminton_stats.level import fit_levels  # noqa: E402
+from badminton_stats.level import fit_levels, replay_fit  # noqa: E402
 
 A, B, C, D = "a", "b", "c", "d"
 
@@ -53,3 +53,20 @@ def test_transitive_credit():
     m += [(("a", others[0]), ("x", others[1]), "A")] * 3
     lv = fit_levels(m, ["a", "x"] + others)
     assert lv["a"] > lv[others[1]] and lv["x"] > lv[others[1]]
+
+
+def test_replay_fit_bookkeeping():
+    m = [(1, (A, B), (C, D), "A"), (2, (A, C), (B, D), "B"), (3, (A, D), (B, C), "A")]
+    results, state = replay_fit(m, [A, B, C, D, "idle"])
+    assert [r.match_id for r in results] == [1, 2, 3]
+    assert results[0].rating_before == {A: 1000.0, B: 1000.0, C: 1000.0, D: 1000.0}
+    assert results[0].p_a == 0.5
+    assert results[0].matches_before[A] == 0 and results[2].matches_before[A] == 2
+    assert state.n_matches == {A: 3, B: 3, C: 3, D: 3, "idle": 0}
+    assert state.rating["idle"] == 1000.0
+    for r in results:
+        for p in r.players:
+            assert r.rating_after[p] == r.rating_before[p] + r.delta[p]
+    fresh = fit_levels([(ta, tb, w) for _, ta, tb, w in m], [A, B, C, D])
+    for p in (A, B, C, D):
+        assert abs(state.rating[p] - fresh[p]) < 1e-6

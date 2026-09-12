@@ -199,7 +199,6 @@
     const sels = Array.from($app.querySelectorAll('.matchup select'));
     const out = document.getElementById('matchup-result');
     const avgEl = i => $app.querySelector(`[data-avg="${i}"]`);
-    const kFor = p => (p.matches < CFG.k_new_until ? CFG.k_new : CFG.k_established);
     function update() {
       const names = sels.map(s => s.value);
       const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);
@@ -213,12 +212,9 @@
       const ra = avg(A), rb = avg(B);
       const pa = 1 / (1 + Math.pow(10, (rb - ra) / 400));
       const pctA = Math.round(pa * 100), pctB = 100 - pctA;
-      // Elo each player would gain with a win, using their own K (same formula as the real matches).
-      const gain = (ps, p) => ps.map(pl => signed(kFor(pl) * (1 - p), 0)).join(' / ');
       out.innerHTML = `
         <div class="pcts"><span class="a-ink">${pctA}%</span><span class="b-ink">${pctB}%</span></div>
-        <div class="bar"><div class="a" style="width:${pa * 100}%"></div><div class="b" style="flex:1"></div></div>
-        <div class="deltas"><span>${gain(A, pa)} ${esc(t('matchup_if_win'))}</span><span>${gain(B, 1 - pa)} ${esc(t('matchup_if_win'))}</span></div>`;
+        <div class="bar"><div class="a" style="width:${pa * 100}%"></div><div class="b" style="flex:1"></div></div>`;
     }
     sels.forEach(s => s.addEventListener('change', update));
     update();
@@ -235,8 +231,6 @@
         <td class="num"><b>${p.points > 0 ? '+' : ''}${p.points}</b></td>
         <td class="num">${p.wins}-${p.losses}</td>
         <td class="num">${Math.round(p.elo)}</td>
-        <td class="num">${p.level == null ? t('none') : Math.round(p.level)}</td>
-        <td class="num">${p.rank_level == null ? t('none') : p.rank_level}</td>
         <td class="num">${eloRank}</td></tr>`;
     }).join('');
 
@@ -256,10 +250,8 @@
           <th class="num">${esc(t('points'))}${tip('tip_points')}</th>
           <th class="num">${esc(t('record'))}${tip('tip_record')}</th>
           <th class="num">${esc(t('elo'))}${tip('tip_elo', { start: CFG.start_rating })}</th>
-          <th class="num">${esc(t('level'))}${tip('tip_level', { n: CFG.level_min_matches })}</th>
-          <th class="num">${esc(t('level_rank'))}${tip('tip_level_rank', { n: CFG.level_min_matches })}</th>
           <th class="num">${esc(t('elo_rank'))}${tip('tip_elo_rank', { n: CFG.provisional_until })}</th></tr></thead>
-        <tbody>${rows || `<tr><td colspan="8" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
+        <tbody>${rows || `<tr><td colspan="6" class="empty">${esc(t('no_matches'))}</td></tr>`}</tbody>
       </table></div>
 
       <h2>${esc(t('last_matches'))}</h2>
@@ -366,7 +358,6 @@
         ${statCard(t('win_rate'), pct(p.win_rate), { tip: tip('tip_win_rate') })}
         ${statCard(t('points'), pointsVal, { tip: tip('tip_points') })}
         ${statCard(t('elo_rating'), eloVal, { tip: tip('tip_elo', { start: CFG.start_rating }) })}
-        ${statCard(t('level'), p.level == null ? t('none') : `${Math.round(p.level)} <small>#${p.rank_level}</small>`, { tip: tip('tip_level', { n: CFG.level_min_matches }) })}
         ${statCard(t('current_streak'), streak, { tip: tip('tip_streak') })}
         ${statCard(t('longest_win'), p.longest_win, { cls: 'win' })}
         ${statCard(t('longest_loss'), p.longest_loss, { cls: 'loss' })}

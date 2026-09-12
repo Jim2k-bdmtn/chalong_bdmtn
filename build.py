@@ -17,6 +17,7 @@ from pathlib import Path
 
 from badminton_stats import config
 from badminton_stats.load import ValidationError, load_matches, load_players
+from badminton_stats.level import fit_levels
 from badminton_stats.payload import build_payload, replay_frame
 from badminton_stats.render import render
 
@@ -28,9 +29,10 @@ def sanity_checks(df, payload) -> list[tuple[str, bool, str]]:
     results, state, _ = replay_frame(df)
     checks = []
 
-    worst = max((abs(sum(r.delta[p] / r.k[p] for p in r.players)) for r in results), default=0.0)
-    checks.append(("Per-match deltas sum to zero (weighted by 1/K)", worst < 1e-9,
-                   f"max |sum(delta/K)| = {worst:.2e} over {len(results)} matches"))
+    fresh = fit_levels([(r.team_a, r.team_b, r.winner) for r in results], state.rating.keys())
+    worst = max((abs(fresh[p] - state.rating[p]) for p in fresh), default=0.0)
+    checks.append(("Match-by-match refit ends at the full-season fit", worst < 1e-3,
+                   f"max rating difference = {worst:.2e} over {len(results)} matches"))
 
     ranked = payload["leaderboard_elo"]
     bad = [p for p in ranked if payload["players"][p]["matches"] < config.PROVISIONAL_UNTIL]

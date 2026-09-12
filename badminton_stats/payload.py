@@ -6,18 +6,18 @@ import datetime as dt
 import pandas as pd
 
 from . import config, global_stats
-from .elo import EloState, MatchResult, replay
-from .level import fit_levels
+from .elo import EloState, MatchResult
+from .level import replay_fit
 from .stats import player_stats
 
 
 def replay_frame(df: pd.DataFrame) -> tuple[list[MatchResult], EloState, dict[int, str]]:
-    """Run the Elo engine over the frame. Returns (results, final state, match_id -> ISO date)."""
+    """Run the season-fit rating engine over the frame. Returns (results, final state, match_id -> ISO date)."""
     matches = [
         (int(row.match_id), (row.player_a1, row.player_a2), (row.player_b1, row.player_b2), row.winner)
         for row in df.itertuples(index=False)
     ]
-    results, state = replay(matches)
+    results, state = replay_fit(matches)
     dates = {int(r.match_id): r.date.strftime("%Y-%m-%d") for r in df.itertuples(index=False)}
     return results, state, dates
 
@@ -37,13 +37,6 @@ def _score(v) -> int | None:
 def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
     results, state, dates = replay_frame(df)
     pstats = player_stats(players, results, state, dates)
-    levels = fit_levels([(r.team_a, r.team_b, r.winner) for r in results], players)
-    for name, s in pstats.items():
-        s["level"] = round(levels[name], 1) if s["matches"] >= config.LEVEL_MIN_MATCHES else None
-        s["rank_level"] = None
-    for rank, s in enumerate(sorted((s for s in pstats.values() if s["level"] is not None),
-                                    key=lambda s: (-s["level"], s["name"])), start=1):
-        s["rank_level"] = rank
     boards = global_stats.leaderboards(pstats)
 
     match_rows = []
@@ -68,7 +61,6 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
         "config": {
             "start_rating": config.START_RATING,
             "level_prior_sd": config.LEVEL_PRIOR_SD,
-            "level_min_matches": config.LEVEL_MIN_MATCHES,
             "k_new": config.K_NEW,
             "k_established": config.K_ESTABLISHED,
             "k_new_until": config.K_NEW_UNTIL,
