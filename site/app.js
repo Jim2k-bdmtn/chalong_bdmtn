@@ -236,7 +236,7 @@
 
     const lastMatches = DATA.matches.slice(-CFG.home_last_matches).reverse().map(m => matchCard(m)).join('');
 
-    const upsets = DATA.upsets.slice(0, CFG.home_upsets).map(u => `
+    const upsets = DATA.upsets.filter(u => !u.provisional).slice(0, CFG.home_upsets).map(u => `
       <div class="match">
         <div class="head"><span>${esc(u.date)}</span><span>${esc(t('win_chance'))} <b>${pct(u.winner_prob)}</b> ${u.provisional ? provisionalBadge() : ''}</span></div>
         <div style="margin-top:4px">${u.winners.map(link).join(' & ')} <span style="color:var(--muted)">${esc(t('beat'))}</span> ${u.losers.map(link).join(' & ')}</div>
@@ -270,7 +270,7 @@
       </div>
 
       <h2>${esc(t('upsets'))}${tip('tip_upsets')}</h2>
-      <p class="sub">${esc(t('upsets_sub'))}</p>
+      <p class="sub">${esc(t('upsets_sub', { n: CFG.provisional_until }))}</p>
       ${upsets || `<div class="empty">${esc(t('no_matches'))}</div>`}
 
       ${twoCol(t('form_up'), tip('tip_form_up', { n: CFG.form_global_matches }), formList(DATA.form_up),

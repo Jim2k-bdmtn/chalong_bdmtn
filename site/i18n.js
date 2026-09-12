@@ -21,7 +21,7 @@ const I18N = {
     provisional: "prov",
     never_played: "no matches yet",
     upsets: "Biggest upsets",
-    upsets_sub: "Wins that were least likely before the match.",
+    upsets_sub: "Wins that were least likely before the match. Only matches where all four players already had {n}+ matches.",
     beat: "beat",
     win_chance: "win chance",
     win_chance_now: "win chance by today's Elo",
