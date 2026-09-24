@@ -1,4 +1,4 @@
-"""League-wide tables: leaderboards, upsets, longest streaks, scatter data."""
+"""League-wide tables: leaderboards, upsets, longest streaks."""
 from __future__ import annotations
 
 from . import config
@@ -87,9 +87,14 @@ def rank_gap_lists(pstats: dict[str, dict]) -> dict[str, list[dict]]:
             "points_over_elo": points_better[:config.TOP_RANK_GAP]}
 
 
-def scatter(pstats: dict[str, dict]) -> list[dict]:
-    return [
-        {"name": s["name"], "matches": s["matches"], "win_rate": round(s["win_rate"], 4),
-         "elo": s["elo"], "provisional": s["provisional"]}
-        for s in pstats.values() if s["matches"] > 0
+def win_rate_lists(pstats: dict[str, dict]) -> dict[str, list[dict]]:
+    """The TOP_WIN_RATE highest win rates among players with MIN_WIN_RATE_MATCHES+ matches.
+    Ties on win rate go to the player with more matches, then by name."""
+    rows = [
+        {"name": s["name"], "matches": s["matches"], "wins": s["wins"], "losses": s["losses"],
+         "win_rate": round(s["win_rate"], 4)}
+        for s in pstats.values() if s["matches"] >= config.MIN_WIN_RATE_MATCHES
     ]
+    best = sorted(rows, key=lambda r: (-r["win_rate"], -r["matches"], r["name"]))
+    return {"win_rate_best": best[:config.TOP_WIN_RATE]}
+

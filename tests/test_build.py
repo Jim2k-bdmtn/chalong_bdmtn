@@ -98,6 +98,13 @@ def test_points_and_leaderboards_consistent(season):
         assert r["rank_elo"] < r["rank_points"] and payload["players"][r["name"]]["matches"] >= config.MIN_RANK_GAP_MATCHES
     for r in payload["points_over_elo"]:
         assert r["rank_points"] < r["rank_elo"]
+    best = payload["win_rate_best"]
+    assert 0 < len(best) <= config.TOP_WIN_RATE
+    eligible = [p for p in payload["players"].values() if p["matches"] >= config.MIN_WIN_RATE_MATCHES]
+    assert best[0]["win_rate"] == pytest.approx(max(p["win_rate"] for p in eligible), abs=1e-4)
+    assert [r["win_rate"] for r in best] == sorted((r["win_rate"] for r in best), reverse=True)
+    for r in best:
+        assert r["matches"] >= config.MIN_WIN_RATE_MATCHES and r["wins"] + r["losses"] == r["matches"]
 
 
 def test_render_embeds_valid_json(season, tmp_path):
@@ -110,5 +117,5 @@ def test_render_embeds_valid_json(season, tmp_path):
     assert m, "data block not found"
     embedded = json.loads(m.group(1).replace("<\\/", "</"))
     assert set(embedded) >= {"players", "leaderboard_points", "leaderboard_elo", "provisional",
-                             "upsets", "streaks_win", "streaks_loss", "scatter", "matches", "config"}
+                             "upsets", "streaks_win", "streaks_loss", "matches", "config"}
     assert embedded["players"]["Ace"]["elo"] == payload["players"]["Ace"]["elo"]

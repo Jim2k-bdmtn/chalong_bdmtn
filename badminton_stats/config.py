@@ -20,6 +20,8 @@ FORM_GLOBAL_MATCHES = 10  # home page hot/cold form: Elo change within the leagu
 TOP_FORM = 3              # players shown in each form list
 TOP_RANK_GAP = 3          # players shown in each Elo-vs-points list
 MIN_RANK_GAP_MATCHES = 5  # matches needed to appear in the Elo-vs-points lists
+TOP_WIN_RATE = 5          # players shown in the best win-rate list
+MIN_WIN_RATE_MATCHES = 5  # matches needed to appear in the best win-rate list
 TOP_POINTS_CHART = 5      # players drawn in the points-race chart on the home page
 
 REQUIRED_COLUMNS = [

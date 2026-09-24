@@ -75,6 +75,8 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "form_window": config.FORM_WINDOW,
             "form_global_matches": config.FORM_GLOBAL_MATCHES,
             "min_rank_gap_matches": config.MIN_RANK_GAP_MATCHES,
+            "top_win_rate": config.TOP_WIN_RATE,
+            "min_win_rate_matches": config.MIN_WIN_RATE_MATCHES,
             "top_points_chart": config.TOP_POINTS_CHART,
         },
         "players": pstats,
@@ -83,6 +85,6 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
         **global_stats.longest_streaks(pstats),
         **_form(results, dates),
         **global_stats.rank_gap_lists(pstats),
-        "scatter": global_stats.scatter(pstats),
+        **global_stats.win_rate_lists(pstats),
         "matches": match_rows,
     }

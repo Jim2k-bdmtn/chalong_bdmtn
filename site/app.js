@@ -90,23 +90,6 @@
     }], Object.assign({}, BASE_LAYOUT, { xaxis: { type: 'date' }, yaxis: { zeroline: true } }), PLOT_CFG);
   }
 
-  function scatterChart(id) {
-    if (!window.Plotly) return noPlotly(id);
-    const el = document.getElementById(id);
-    if (!el) return;
-    const pts = DATA.scatter;
-    Plotly.newPlot(el, [{
-      x: pts.map(p => p.matches), y: pts.map(p => p.win_rate * 100),
-      text: pts.map(p => p.name), mode: 'markers',
-      marker: { size: 10, opacity: 0.85, color: pts.map(p => p.provisional ? '#c9a227' : '#1f6feb') },
-      hovertemplate: '<b>%{text}</b><br>%{x} ' + esc(t('matches_played')).toLowerCase() + '<br>%{y:.0f}% ' + esc(t('win_rate')).toLowerCase() + '<extra></extra>',
-    }], Object.assign({}, BASE_LAYOUT, {
-      xaxis: { title: { text: t('matches_played') }, rangemode: 'tozero' },
-      yaxis: { title: { text: t('win_rate') + ' %' }, range: [-5, 105] },
-    }), PLOT_CFG);
-    el.on('plotly_click', d => { if (d.points && d.points[0]) location.hash = hashFor(d.points[0].text); });
-  }
-
   const RACE_COLORS = ['#1f6feb', '#d1373b', '#1a8f4c', '#c9a227', '#7c3aed', '#0891b2', '#ea580c'];
   function pointsRaceChart(id) {
     if (!window.Plotly) return noPlotly(id);
@@ -163,6 +146,10 @@
   function rankGapList(rows) {
     if (!rows.length) return `<div class="empty">${esc(t('none_yet'))}</div>`;
     return rows.map(r => `<div class="streak-row"><span class="who">${link(r.name)}</span><span class="len" style="font-weight:500;color:var(--muted);font-size:13px">${esc(t('rank_pair', { e: r.rank_elo, p: r.rank_points }))}</span></div>`).join('');
+  }
+  function winRateList(rows) {
+    if (!rows.length) return `<div class="empty">${esc(t('none_yet'))}</div>`;
+    return rows.map(r => `<div class="streak-row"><span class="who">${link(r.name)} <small style="color:var(--muted)">${r.wins}-${r.losses}</small></span><span class="len">${pct(r.win_rate)}</span></div>`).join('');
   }
   function twoCol(leftTitle, leftTip, leftBody, rightTitle, rightTip, rightBody) {
     return `<div class="two-col">
@@ -280,13 +267,15 @@
       ${twoCol(t('streaks_win'), tip('tip_streaks_win'), streakList(DATA.streaks_win, 'pos'),
                t('streaks_loss'), tip('tip_streaks_loss'), streakList(DATA.streaks_loss, 'neg'))}
 
+      <div class="two-col">
+        <div><h2>${esc(t('win_rate_best'))}${tip('tip_win_rate_best', { n: CFG.min_win_rate_matches })}</h2>
+          <div class="card">${winRateList(DATA.win_rate_best)}</div></div>
+      </div>
+      <p class="sub">${esc(t('win_rate_sub', { n: CFG.min_win_rate_matches }))}</p>
+
       ${twoCol(t('elo_over_points'), tip('tip_elo_over_points'), rankGapList(DATA.elo_over_points),
                t('points_over_elo'), tip('tip_points_over_elo'), rankGapList(DATA.points_over_elo))}
       <p class="sub">${esc(t('rank_gap_sub', { n: CFG.min_rank_gap_matches }))}</p>
-
-      <h2>${esc(t('scatter'))}${tip('tip_scatter')}</h2>
-      <p class="sub">${esc(t('scatter_sub'))}</p>
-      <div class="card"><div id="scatter" class="chart"></div></div>
 
       <h2>${esc(t('points_race'))}${tip('tip_points_race')}</h2>
       <p class="sub">${esc(t('points_race_sub', { n: CFG.top_points_chart }))}</p>
@@ -296,7 +285,6 @@
       tr.addEventListener('click', e => { if (!e.target.closest('.tip')) location.hash = hashFor(tr.dataset.player); });
     });
     initMatchup();
-    scatterChart('scatter');
     pointsRaceChart('points-race');
   }
 
