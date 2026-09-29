@@ -120,11 +120,12 @@ def test_notable_matches_use_todays_ratings(monkeypatch):
     assert all(by_id[h["match_id"]].won("me") for h in hard)
 
 
-def test_p_win_now_is_team_mean_expected():
+def test_p_win_now_uses_carry_weighted_pairs():
     from badminton_stats.elo import EloState, process_match, expected
+    from badminton_stats.level import team_rating
     r = process_match(EloState(), 1, ("me", "pal"), ("x", "y"), "A")
-    today = {"me": 1200, "pal": 1000, "x": 1100, "y": 1100}   # 1100 vs 1100 -> 0.5
-    assert p_win_now("me", r, today) == pytest.approx(0.5)
-    assert p_win_now("x", r, today) == pytest.approx(0.5)
-    today["me"] = 1400                                          # 1200 vs 1100
-    assert p_win_now("me", r, today) == pytest.approx(expected(1200, 1100))
+    today = {"me": 1100, "pal": 1100, "x": 1200, "y": 1000}
+    # equal teammates count half each; 1200 + 1000 leans towards 1200
+    assert p_win_now("me", r, today) == pytest.approx(expected(1100, team_rating(1200, 1000)))
+    assert p_win_now("me", r, today) < 0.5
+    assert p_win_now("me", r, today) + p_win_now("x", r, today) == pytest.approx(1.0)

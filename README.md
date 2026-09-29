@@ -149,7 +149,9 @@ python -m http.server -d docs 8000
 Everything lives in `badminton_stats/`; constants are in `config.py`.
 
 - **League points**: +1 per win, −1 per loss, per player. The official ranking.
-- **Elo (doubles, season fit)**: everyone starts at 1000. Team rating = mean of the two players,
+- **Elo (doubles, season fit)**: everyone starts at 1000. Team rating = 70% of the stronger
+  player plus 30% of the weaker (`LEVEL_CARRY_WEIGHT`; the better player carries more of the game, and
+  a plain mean over-credited weak players who always partner strong ones),
   `expected(A) = 1 / (1 + 10^((R_B − R_A) / 400))`. Instead of the classic K-factor walk, the
   ratings are a Bradley-Terry fit over *all* matches at once (`level.py`): the set of ratings that best
   explains every result, with a mild prior pulling everyone towards 1000 (`LEVEL_PRIOR_SD`) so thin

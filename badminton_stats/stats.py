@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from . import config
 from .elo import EloState, MatchResult, expected
+from .level import team_rating
 
 
 def streaks(results: list[str]) -> dict:
@@ -67,13 +68,10 @@ def opponent_table(player: str, played: list[MatchResult]) -> dict:
 
 def p_win_now(player: str, r: MatchResult, rating: dict[str, float]) -> float:
     """Win chance of `player`'s team in match `r`, judged by TODAY's ratings of the four players."""
-    own = r.team_of(player)
-    opp = r.opponents_of(player)
+    def pair(team):
+        return team_rating(*(rating.get(p, config.START_RATING) for p in team))
 
-    def mean(team):
-        return sum(rating.get(p, config.START_RATING) for p in team) / 2.0
-
-    return expected(mean(own), mean(opp))
+    return expected(pair(r.team_of(player)), pair(r.opponents_of(player)))
 
 
 def notable_matches(player: str, played: list[MatchResult],

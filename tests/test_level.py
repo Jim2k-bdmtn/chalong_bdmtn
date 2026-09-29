@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from badminton_stats import config  # noqa: E402
-from badminton_stats.level import fit_levels, replay_fit  # noqa: E402
+from badminton_stats.level import CARRY_SMOOTH, fit_levels, replay_fit, team_rating  # noqa: E402
 
 A, B, C, D = "a", "b", "c", "d"
 
@@ -70,3 +70,25 @@ def test_replay_fit_bookkeeping():
     fresh = fit_levels([(ta, tb, w) for _, ta, tb, w in m], [A, B, C, D])
     for p in (A, B, C, D):
         assert abs(state.rating[p] - fresh[p]) < 1e-6
+
+
+def test_team_rating_leans_towards_stronger_player():
+    assert team_rating(1100, 1100) == 1100
+    assert team_rating(1200, 1000) == team_rating(1000, 1200)
+    w = config.LEVEL_CARRY_WEIGHT
+    assert abs(team_rating(1300, 900) - (w * 1300 + (1 - w) * 900)) < (w - 0.5) * CARRY_SMOOTH + 1e-9
+    assert team_rating(1200, 1000, carry=0.5) == 1100
+
+
+def test_carried_partner_gets_less_credit():
+    """The complaint that motivated LEVEL_CARRY_WEIGHT: w always partners the strong s and beats two
+    medium players. Under a plain average w looks as good as the medium players; with carry he does not."""
+    m = [(("s", f"m{i}"), (f"m{i + 1}", f"m{i + 2}"), "A") for i in range(6)] * 2   # s is strong
+    m += [(("m0", "m1"), ("m2", "m3"), "A"), (("m2", "m3"), ("m0", "m1"), "A")]
+    m += [(("s", "w"), ("m1", "m2"), "A"), (("s", "w"), ("m3", "m4"), "A"), (("s", "w"), ("m1", "m4"), "B")]
+    names = ["s", "w"] + [f"m{i}" for i in range(8)]
+    avg = fit_levels(m, names, carry=0.5)
+    carry = fit_levels(m, names, carry=0.7)
+    assert carry["w"] < avg["w"]
+    assert carry["s"] > carry["w"]
+

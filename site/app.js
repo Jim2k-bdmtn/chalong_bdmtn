@@ -189,14 +189,16 @@
     function update() {
       const names = sels.map(s => s.value);
       const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);
-      const avg = ps => ps.reduce((a, p) => a + p.elo, 0) / ps.length;
-      [0, 1].forEach(i => { const ps = team(i); avgEl(i).textContent = ps.length ? `${t('matchup_avg')} ${Math.round(avg(ps))}` : ''; });
+      const w = CFG.level_carry_weight;
+      const pair = ps => ps.length < 2 ? ps[0].elo
+        : w * Math.max(ps[0].elo, ps[1].elo) + (1 - w) * Math.min(ps[0].elo, ps[1].elo);
+      [0, 1].forEach(i => { const ps = team(i); avgEl(i).textContent = ps.length ? `${t('matchup_avg')} ${Math.round(pair(ps))}` : ''; });
       const picked = names.filter(Boolean);
       const dup = picked.find((n, i) => picked.indexOf(n) !== i);
       if (dup) { out.innerHTML = `<div class="msg">${esc(t('matchup_dup', { name: dup }))}</div>`; return; }
       if (picked.length < 4) { out.innerHTML = `<div class="msg">${esc(t('matchup_need_four'))}</div>`; return; }
       const A = team(0), B = team(1);
-      const ra = avg(A), rb = avg(B);
+      const ra = pair(A), rb = pair(B);
       const pa = 1 / (1 + Math.pow(10, (rb - ra) / 400));
       const pctA = Math.round(pa * 100), pctB = 100 - pctA;
       out.innerHTML = `

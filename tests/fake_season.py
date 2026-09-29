@@ -86,7 +86,7 @@ def main(out_dir: Path) -> None:
         present = set()
         while len(present) < n_present:
             present.add(rng.choices(regulars, weights)[0])
-        present = list(present)
+        present = sorted(present)  # set order depends on PYTHONHASHSEED; keep the season reproducible
         for n, days in casual_nights.items():
             if night in days:   # casual plays exactly one match and is not in the regular pool
                 play(night, [n] + rng.sample(present, 3))

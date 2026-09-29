@@ -45,7 +45,7 @@ const I18N = {
     matchup_sub: "Pick two pairs and see each pair's win chance from today's Elo.",
     matchup_pick: "— pick —",
     matchup_team: "Pair {n}",
-    matchup_avg: "avg Elo",
+    matchup_avg: "pair Elo",
     matchup_need_four: "Pick four different players.",
     matchup_dup: "{name} is picked twice.",
     last_matches: "Last matches",
@@ -92,7 +92,7 @@ const I18N = {
 
     // tooltips (plain words)
     tip_points: "Official league points: +1 for every match you win, −1 for every match you lose.",
-    tip_elo: "A skill rating. Everyone starts at {start}. It is refitted over the whole season after every match, so all results count equally whatever their order. Beating a stronger pair is worth more than beating a weaker pair, and losing to a weaker pair costs more. A pair's rating is the average of its two players.",
+    tip_elo: "A skill rating. Everyone starts at {start}. It is refitted over the whole season after every match, so all results count equally whatever their order. Beating a stronger pair is worth more than beating a weaker pair, and losing to a weaker pair costs more.",
     tip_elo_rank: "Position in the Elo table. Only players with at least {n} matches are ranked; the others are marked provisional.",
     tip_record: "Wins and losses.",
     tip_win_rate: "Wins divided by matches played.",
@@ -120,13 +120,13 @@ const I18N = {
     tip_streaks_loss: "The longest run of consecutive losses any player has had, all time.",
     tip_points_race: "League points (+1 win, −1 loss) after every match, for the players currently at the top of the points table.",
     tip_delta: "How much each player's Elo moved when this match was added to the season.",
-    tip_matchup: "Each pair's rating is the average of its two players' current Elo. The win chance is the standard Elo formula on the two pair ratings, the same one used before every real match. Provisional players count with their current rating."
+    tip_matchup: "The win chance is worked out from the four players' current Elo, the same way as before every real match. Provisional players count with their current rating."
   },
 
   th: {
     leaderboard_sub: "คะแนนและ Elo แสดงเคียงข้างกัน แตะที่แถวเพื่อดูหน้าผู้เล่น หรือเลื่อนลงเพื่อดูข้อมูลรวมเพิ่มเติม",
     tip_points: "แต้มลีกอย่างเป็นทางการ: ชนะได้ +1 แพ้เสีย −1 ต่อแมตช์",
-tip_elo: "คะแนนวัดฝีมือ ทุกคนเริ่มที่ {start} คำนวณใหม่จากผลทั้งฤดูกาลหลังทุกแมตช์ ทุกผลจึงมีน้ำหนักเท่ากันไม่ว่าจะแข่งก่อนหรือหลัง ชนะคู่ที่เก่งกว่าจะได้แต้มมากกว่าชนะคู่ที่อ่อนกว่า และแพ้ให้คู่ที่อ่อนกว่าจะเสียแต้มมากกว่า คะแนนของคู่คือค่าเฉลี่ยของผู้เล่นทั้งสองคน",
+tip_elo: "คะแนนวัดฝีมือ ทุกคนเริ่มที่ {start} คำนวณใหม่จากผลทั้งฤดูกาลหลังทุกแมตช์ ทุกผลจึงมีน้ำหนักเท่ากันไม่ว่าจะแข่งก่อนหรือหลัง ชนะคู่ที่เก่งกว่าจะได้แต้มมากกว่าชนะคู่ที่อ่อนกว่า และแพ้ให้คู่ที่อ่อนกว่าจะเสียแต้มมากกว่า",
 tip_elo_rank: "อันดับในตาราง Elo เฉพาะผู้เล่นที่ลงแข่งอย่างน้อย {n} แมตช์เท่านั้นที่ถูกจัดอันดับ ที่เหลือถือเป็นอันดับชั่วคราว",
 tip_record: "จำนวนชนะและแพ้",
 tip_win_rate: "จำนวนชนะหารด้วยจำนวนแมตช์ที่ลงแข่ง",
@@ -156,6 +156,6 @@ tip_points_race: "แต้มลีก (ชนะ +1 แพ้ −1) หลั�
 tip_delta: "Elo ของผู้เล่นแต่ละคนเปลี่ยนไปเท่าไรเมื่อเพิ่มแมตช์นี้เข้าไปในฤดูกาล",
 last_matches_sub: "{n} แมตช์ล่าสุด เรียงจากใหม่สุด",
 matchup_sub: "เลือกสองคู่ แล้วดูโอกาสชนะของแต่ละคู่จากคะแนน Elo วันนี้",
-tip_matchup: "คะแนนของแต่ละคู่คือค่าเฉลี่ย Elo ปัจจุบันของผู้เล่นทั้งสองคน โอกาสชนะคำนวณด้วยสูตร Elo มาตรฐานจากคะแนนของสองคู่ ซึ่งเป็นสูตรเดียวกับที่ใช้ก่อนทุกแมตช์จริง ผู้เล่นอันดับชั่วคราวใช้คะแนนปัจจุบันของตน",
+tip_matchup: "โอกาสชนะคำนวณจาก Elo ปัจจุบันของผู้เล่นทั้งสี่คน ด้วยวิธีเดียวกับที่ใช้ก่อนทุกแมตช์จริง ผู้เล่นอันดับชั่วคราวใช้คะแนนปัจจุบันของตน",
   }
 };
