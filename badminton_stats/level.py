@@ -6,26 +6,31 @@ together, so a January win over someone who later turned out to be strong counts
 win over them today.
 
   * Same scale and formula as classic Elo: P(A wins) = 1 / (1 + 10 ** ((R_B - R_A) / 400)).
-  * A pair's rating leans towards its stronger player: LEVEL_CARRY_WEIGHT (0.7) of the stronger
-    player's rating plus the rest of the weaker one's. With a plain average, a weak player who
+  * A pair's rating leans towards its stronger player, gradually: partners with equal ratings count
+    half each, and the stronger one's weight grows with the gap towards LEVEL_CARRY_WEIGHT (0.7),
+    about 0.64 at a gap of LEVEL_CARRY_SMOOTH (100) points. With a plain average, a weak player who
     always partners a strong one against two medium players got half the credit for wins the
-    strong player earned. On the real results 0.7 predicted held-out matches better than 0.5.
+    strong player earned. A split that jumped to 70/30 a few points past equal made ratings leap
+    whenever one match lifted a player just past an old partner (every old match with that partner
+    flipped to the other split); the gradual split also predicts each match from the earlier ones better.
   * A mild prior pulls every rating towards START_RATING (normal prior with standard deviation
     LEVEL_PRIOR_SD points). Players with one or two matches stay close to the middle until they
     have shown more; players with many matches are barely affected.
-  * The switch between "stronger" and "weaker" is smoothed over the first few points of
-    difference (CARRY_SMOOTH), so teammates with equal ratings count half each and the fit has no
-    kinks. Past a few points the split is 70/30 to within a point.
   * Fitted by a diagonal Newton method with a backtracking line search on the penalised
     log-likelihood. Which partner is "stronger" depends on the ratings being fitted, so the
     carry-weighted fit can have more than one optimum. The fit starts with plain averages (a single
     optimum) and raises the carry weight in small steps, following that optimum. The result
     depends only on the set of matches, not on their order or on any earlier fit.
 
-`replay_fit` produces the same MatchResult / EloState objects as the classic engine in elo.py,
-refitting the season after every match, so the rest of the pipeline (match cards, form, upsets,
-histories) works unchanged. "delta" is how much a player's fitted rating moved when the match was
-added; "rating_before" is the fit without it.
+Match points. At the fitted ratings the prior's pull exactly balances the results, which gives
+
+    rating = START_RATING + sum over the player's matches of points_scale() * share * (S - E)
+
+with S = 1 for a win and 0 for a loss, E the pair's win chance and share the player's part of the
+pair (`shares`; the two add up to 1), all judged by today's ratings. So every match hands out
+points that add up to zero: the winners gain what the losers lose, more for a bigger upset, and the
+stronger partner takes the larger share. A rating is exactly the sum of its match points.
+`season_points` scores every match this way; adding a match re-scores all of them.
 """
 from __future__ import annotations
 
@@ -36,15 +41,27 @@ from . import config
 from .elo import EloState, MatchResult, expected
 
 _SCALE = math.log(10) / 400.0  # rating points -> logistic units
-CARRY_SMOOTH = 5.0             # rating points over which a pair's 50/50 split turns into the carry split
 _CARRY_STEP = 0.1            # carry-weight increment per stage of the fit
 
 
 def team_rating(r1: float, r2: float, carry: float | None = None) -> float:
-    """A pair's rating: `carry` (default LEVEL_CARRY_WEIGHT) of the stronger player, the rest of the weaker,
-    blended smoothly towards the plain average when the two are within a few points of each other."""
+    """A pair's rating: the plain average for equal partners, leaning towards the stronger player as the
+    gap grows, up to `carry` (default LEVEL_CARRY_WEIGHT) of the stronger plus the rest of the weaker."""
     k = (config.LEVEL_CARRY_WEIGHT if carry is None else carry) - 0.5
-    return (r1 + r2) / 2.0 + k * (math.hypot(r1 - r2, CARRY_SMOOTH) - CARRY_SMOOTH)
+    smooth = config.LEVEL_CARRY_SMOOTH
+    return (r1 + r2) / 2.0 + k * (math.hypot(r1 - r2, smooth) - smooth)
+
+
+def shares(r1: float, r2: float, carry: float | None = None) -> tuple[float, float]:
+    """Each partner's part of the pair's result: the derivatives of team_rating. They add up to 1."""
+    k = (config.LEVEL_CARRY_WEIGHT if carry is None else carry) - 0.5
+    lean = k * (r1 - r2) / math.hypot(r1 - r2, config.LEVEL_CARRY_SMOOTH)
+    return 0.5 + lean, 0.5 - lean
+
+
+def points_scale() -> float:
+    """Match points per unit of share x (S - E), set by the prior: about 130 for LEVEL_PRIOR_SD = 150."""
+    return config.LEVEL_PRIOR_SD ** 2 * _SCALE
 
 
 def _pair(xa: float, xb: float, k: float, eps: float) -> tuple[float, float, float]:
@@ -66,7 +83,7 @@ def _objective(matches, x: dict[str, float], lam: float, k: float, eps: float) -
 
 def _newton(matches, x: dict[str, float], lam: float, carry: float, max_iter: int, tol: float) -> None:
     """Diagonal Newton with backtracking on the penalised log-likelihood, updating `x` (logistic units) in place."""
-    k, eps = carry - 0.5, CARRY_SMOOTH * _SCALE
+    k, eps = carry - 0.5, config.LEVEL_CARRY_SMOOTH * _SCALE
     f = _objective(matches, x, lam, k, eps)
     for _ in range(max_iter):
         grad = {n: -lam * v for n, v in x.items()}
@@ -126,19 +143,20 @@ def fit_levels(matches: Iterable[tuple[tuple[str, str], tuple[str, str], str]],
     return {n: config.START_RATING + v / _SCALE for n, v in x.items()}
 
 
-def replay_fit(matches, players: Iterable[str] = ()) -> tuple[list[MatchResult], EloState]:
+def season_points(matches, players: Iterable[str] = ()) -> tuple[list[MatchResult], EloState]:
     """matches: iterable of (match_id, team_a, team_b, winner) in chronological order.
 
-    Refits the season after each match. Returns the per-match accounting and the final state,
-    shaped exactly like elo.replay() so downstream code cannot tell the two engines apart.
+    Fits the season once and scores every match with those ratings. Returns the per-match accounting
+    and the final state, shaped like elo.replay() so downstream code cannot tell the two engines apart:
+      p_a            team A's win chance by today's ratings
+      delta          each player's points from the match; the four add up to zero
+      rating_before  START_RATING plus the player's points from their earlier matches
+      rating_after   the same including this match; after a player's last match it is their rating
     """
     state = EloState()
     for p in players:
         state.ensure(p)
-    seen: list[tuple[tuple[str, str], tuple[str, str], str]] = []
-    ratings = dict(state.rating)
-    results: list[MatchResult] = []
-
+    played = []
     for match_id, team_a, team_b, winner in matches:
         if winner not in ("A", "B"):
             raise ValueError(f"winner must be 'A' or 'B', got {winner!r}")
@@ -148,23 +166,31 @@ def replay_fit(matches, players: Iterable[str] = ()) -> tuple[list[MatchResult],
             raise ValueError(f"a match needs 4 distinct players, got {four}")
         for p in four:
             state.ensure(p)
-            ratings.setdefault(p, config.START_RATING)
+        played.append((match_id, team_a, team_b, winner))
 
-        rating_before = {p: ratings[p] for p in four}
-        matches_before = {p: state.n_matches[p] for p in four}
-        k = {p: 0 for p in four}  # no K-factor in a season fit; kept for interface compatibility
-        p_a = expected(team_rating(*(rating_before[p] for p in team_a)),
-                       team_rating(*(rating_before[p] for p in team_b)))
-
-        seen.append((team_a, team_b, winner))
-        ratings = fit_levels(seen, state.rating.keys())
-        rating_after = {p: ratings[p] for p in four}
-        delta = {p: rating_after[p] - rating_before[p] for p in four}
-        for p in four:
-            state.n_matches[p] += 1
-
-        results.append(MatchResult(match_id, team_a, team_b, winner, rating_before,
-                                   matches_before, k, p_a, delta, rating_after))
-
+    ratings = fit_levels([(ta, tb, w) for _, ta, tb, w in played], state.rating.keys())
     state.rating.update(ratings)
+    scale = points_scale()
+    running = dict.fromkeys(ratings, config.START_RATING)
+    results: list[MatchResult] = []
+
+    for match_id, team_a, team_b, winner in played:
+        four = (*team_a, *team_b)
+        p_a = expected(team_rating(*(ratings[p] for p in team_a)),
+                       team_rating(*(ratings[p] for p in team_b)))
+        surprise_a = (1.0 if winner == "A" else 0.0) - p_a
+        delta: dict[str, float] = {}
+        for team, surprise in ((team_a, surprise_a), (team_b, -surprise_a)):
+            for p, share in zip(team, shares(*(ratings[q] for q in team))):
+                delta[p] = scale * share * surprise
+
+        rating_before = {p: running[p] for p in four}
+        matches_before = {p: state.n_matches[p] for p in four}
+        for p in four:
+            running[p] += delta[p]
+            state.n_matches[p] += 1
+        k = {p: 0 for p in four}  # no K-factor in a season fit; kept for interface compatibility
+        results.append(MatchResult(match_id, team_a, team_b, winner, rating_before,
+                                   matches_before, k, p_a, delta, {p: running[p] for p in four}))
+
     return results, state

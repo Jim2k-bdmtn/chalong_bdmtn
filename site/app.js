@@ -114,7 +114,7 @@
   }
 
   /* ---------- match card ---------- */
-  function matchCard(m, focus, chanceNow) {
+  function matchCard(m, focus) {
     const won = team => (team === m.winner);
     const teamHtml = (names, side) => `
       <div class="team ${side} ${won(side === 'left' ? 'A' : 'B') ? 'won' : ''}">
@@ -122,15 +122,14 @@
       </div>`;
     const score = (m.score_a == null) ? `<span class="score" style="font-size:14px;color:var(--muted)">vs</span>`
       : `<span class="score">${m.score_a}–${m.score_b}</span>`;
-    // For a focused player show *their* team's pre-match chance; otherwise the winners' chance.
-    // chanceNow (0-1) = chance recomputed with today's ratings, used by hardest wins / easiest losses.
-    const chance = chanceNow != null ? chanceNow : focus ? (m.a.includes(focus) ? m.p_a : 1 - m.p_a) : m.winner_prob;
-    const chanceLabel = chanceNow != null ? t('win_chance_now') : t('win_chance');
+    // For a focused player show *their* team's chance; otherwise the winners' chance. Both by today's Elo,
+    // the same chance the match points come from.
+    const chance = focus ? (m.a.includes(focus) ? m.p_a : 1 - m.p_a) : m.winner_prob;
     return `
       <div class="match">
         <div class="head"><span>${esc(m.date)}</span><span>#${m.id}</span></div>
         <div class="teams">${teamHtml(m.a, 'left')}${score}${teamHtml(m.b, 'right')}</div>
-        <div class="meta"><span>${esc(chanceLabel)} ${pct(chance)}</span><span>Elo ${tip('tip_delta')}</span></div>
+        <div class="meta"><span>${esc(t('win_chance'))} ${pct(chance)}</span><span>Elo ${tip('tip_delta', { carry: Math.round(CFG.level_carry_weight * 100) })}</span></div>
       </div>`;
   }
 
@@ -189,9 +188,11 @@
     function update() {
       const names = sels.map(s => s.value);
       const team = i => names.slice(i * 2, i * 2 + 2).filter(Boolean).map(n => DATA.players[n]);
-      const w = CFG.level_carry_weight;
+      // Same pair rating as the build (level.team_rating): plain average for equal partners,
+      // leaning towards the stronger one as the gap grows.
+      const k = CFG.level_carry_weight - 0.5, s = CFG.level_carry_smooth;
       const pair = ps => ps.length < 2 ? ps[0].elo
-        : w * Math.max(ps[0].elo, ps[1].elo) + (1 - w) * Math.min(ps[0].elo, ps[1].elo);
+        : (ps[0].elo + ps[1].elo) / 2 + k * (Math.hypot(ps[0].elo - ps[1].elo, s) - s);
       [0, 1].forEach(i => { const ps = team(i); avgEl(i).textContent = ps.length ? `${t('matchup_avg')} ${Math.round(pair(ps))}` : ''; });
       const picked = names.filter(Boolean);
       const dup = picked.find((n, i) => picked.indexOf(n) !== i);
@@ -336,7 +337,7 @@
       o ? `${link(o.name)} <small>${o.wins}-${o.losses}</small>` : `<small>${esc(t('none'))}</small>`,
       { tip: tip(key, { n: CFG.min_opponent_matches }) });
 
-    const cards = items => items.map(x => matchCard(MATCH_BY_ID[x.match_id], name, x.p_now)).join('') || `<div class="card empty">${esc(t('none_yet'))}</div>`;
+    const cards = items => items.map(x => matchCard(MATCH_BY_ID[x.match_id], name)).join('') || `<div class="card empty">${esc(t('none_yet'))}</div>`;
     const recent = DATA.matches.filter(m => m.a.includes(name) || m.b.includes(name)).slice(-3).reverse();
 
     $app.innerHTML = `

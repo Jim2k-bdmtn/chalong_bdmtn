@@ -8,6 +8,7 @@ K_NEW_UNTIL = 5     # matches played with the higher K-factor (changing this cha
 PROVISIONAL_UNTIL = 10  # players with fewer matches than this are "provisional": no Elo rank
 LEVEL_PRIOR_SD = 150.0  # season-fit rating: prior pull towards START_RATING (points); smaller = stronger pull
 LEVEL_CARRY_WEIGHT = 0.7  # share of a pair's rating that comes from its stronger player (0.5 = plain average)
+LEVEL_CARRY_SMOOTH = 100.0  # rating gap (points) over which a pair's split grows from 50/50 towards LEVEL_CARRY_WEIGHT
 
 MIN_OPPONENT_MATCHES = 5  # for nemesis / victim
 FORM_LENGTH = 10          # results shown in "form"

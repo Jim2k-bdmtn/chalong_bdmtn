@@ -5,7 +5,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from badminton_stats import config  # noqa: E402
-from badminton_stats.level import CARRY_SMOOTH, fit_levels, replay_fit, team_rating  # noqa: E402
+import random  # noqa: E402
+
+from badminton_stats.level import fit_levels, season_points, shares, team_rating  # noqa: E402
 
 A, B, C, D = "a", "b", "c", "d"
 
@@ -55,28 +57,83 @@ def test_transitive_credit():
     assert lv["a"] > lv[others[1]] and lv["x"] > lv[others[1]]
 
 
-def test_replay_fit_bookkeeping():
+def test_season_points_bookkeeping():
     m = [(1, (A, B), (C, D), "A"), (2, (A, C), (B, D), "B"), (3, (A, D), (B, C), "A")]
-    results, state = replay_fit(m, [A, B, C, D, "idle"])
+    results, state = season_points(m, [A, B, C, D, "idle"])
     assert [r.match_id for r in results] == [1, 2, 3]
     assert results[0].rating_before == {A: 1000.0, B: 1000.0, C: 1000.0, D: 1000.0}
-    assert results[0].p_a == 0.5
     assert results[0].matches_before[A] == 0 and results[2].matches_before[A] == 2
     assert state.n_matches == {A: 3, B: 3, C: 3, D: 3, "idle": 0}
     assert state.rating["idle"] == 1000.0
     for r in results:
         for p in r.players:
-            assert r.rating_after[p] == r.rating_before[p] + r.delta[p]
+            assert abs(r.rating_after[p] - (r.rating_before[p] + r.delta[p])) < 1e-9
     fresh = fit_levels([(ta, tb, w) for _, ta, tb, w in m], [A, B, C, D])
     for p in (A, B, C, D):
         assert abs(state.rating[p] - fresh[p]) < 1e-6
+
+
+def _random_season(n_players=8, n_matches=60, seed=1):
+    rng = random.Random(seed)
+    names = [f"p{i}" for i in range(n_players)]
+    out = []
+    for i in range(1, n_matches + 1):
+        four = rng.sample(names, 4)
+        out.append((i, (four[0], four[1]), (four[2], four[3]), rng.choice("AB")))
+    return names, out
+
+
+def test_match_points_are_zero_sum_and_add_up_to_ratings():
+    names, m = _random_season()
+    results, state = season_points(m, names)
+    total = dict.fromkeys(names, config.START_RATING)
+    for r in results:
+        assert abs(sum(r.delta.values())) < 1e-9
+        assert all(r.delta[p] > 0 for p in r.winners) and all(r.delta[p] < 0 for p in r.losers)
+        for p, d in r.delta.items():
+            total[p] += d
+    for p in names:
+        assert abs(total[p] - state.rating[p]) < 1e-4
+        last = [r for r in results if p in r.players][-1]
+        assert abs(last.rating_after[p] - state.rating[p]) < 1e-4
+
+
+def test_match_points_do_not_depend_on_order():
+    names, m = _random_season()
+    fwd, _ = season_points(m, names)
+    back, _ = season_points(list(reversed(m)), names)
+    back = {r.match_id: r for r in back}
+    for r in fwd:
+        for p in r.players:
+            assert abs(r.delta[p] - back[r.match_id].delta[p]) < 1e-6
+
+
+def test_stronger_partner_loses_more():
+    """s wins all their matches, w loses all theirs; when s and w lose together, s loses more."""
+    m = [(i, ("s", f"m{i % 4}"), (f"m{(i + 1) % 4}", f"m{(i + 2) % 4}"), "A") for i in range(1, 9)]
+    m += [(i, ("w", f"m{i % 4}"), (f"m{(i + 1) % 4}", f"m{(i + 2) % 4}"), "B") for i in range(9, 17)]
+    m += [(17, ("s", "w"), ("m0", "m1"), "B")]
+    results, state = season_points(m)
+    r = results[-1]
+    assert state.rating["s"] > state.rating["w"]
+    assert r.delta["s"] < r.delta["w"] < 0
+
+
+def test_shares_grow_with_the_gap():
+    assert shares(1000, 1000) == (0.5, 0.5)
+    small, _ = shares(1050, 1000)
+    big, rest = shares(1300, 1000)
+    assert 0.5 < small < big < config.LEVEL_CARRY_WEIGHT
+    assert abs(big + rest - 1.0) < 1e-12
+    assert shares(1000, 1300) == (rest, big)
 
 
 def test_team_rating_leans_towards_stronger_player():
     assert team_rating(1100, 1100) == 1100
     assert team_rating(1200, 1000) == team_rating(1000, 1200)
     w = config.LEVEL_CARRY_WEIGHT
-    assert abs(team_rating(1300, 900) - (w * 1300 + (1 - w) * 900)) < (w - 0.5) * CARRY_SMOOTH + 1e-9
+    assert 1100 < team_rating(1300, 900) < w * 1300 + (1 - w) * 900   # leans, but gradually
+    assert team_rating(1010, 1000) - 1005 < 0.2                        # near-equal partners: about the average
     assert team_rating(1200, 1000, carry=0.5) == 1100
 
 

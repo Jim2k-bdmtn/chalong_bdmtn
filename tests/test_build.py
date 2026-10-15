@@ -36,18 +36,20 @@ def test_fake_data_shape(season):
     assert df["score_a"].isna().sum() > 10          # some blank scores survive
 
 
-def test_refit_matches_full_season_fit_and_moves_the_right_way(season):
+def test_match_points_are_zero_sum_and_add_up_to_the_season_fit(season):
     _, df, _ = season
     results, state, _ = replay_frame(df)
     fresh = fit_levels([(r.team_a, r.team_b, r.winner) for r in results], state.rating.keys())
-    for p, v in fresh.items():
-        assert state.rating[p] == pytest.approx(v, abs=1e-3)
+    total = dict.fromkeys(state.rating, config.START_RATING)
     for r in results:
-        # Per player a win can very occasionally cost a point or two (the partner takes the
-        # credit and becomes the pair's stronger player), but a pair as a whole always moves the right way.
-        assert sum(r.delta[p] for p in r.winners) > 0
-        assert sum(r.delta[p] for p in r.losers) < 0
+        assert sum(r.delta.values()) == pytest.approx(0.0, abs=1e-9)
+        assert all(r.delta[p] > 0 for p in r.winners) and all(r.delta[p] < 0 for p in r.losers)
         assert 0.0 < r.p_a < 1.0
+        for p, d in r.delta.items():
+            total[p] += d
+    for p, v in fresh.items():
+        assert state.rating[p] == pytest.approx(v, abs=1e-6)
+        assert total[p] == pytest.approx(v, abs=1e-3)
 
 
 def test_provisional_players_excluded_from_elo_ranking(season):

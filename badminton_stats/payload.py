@@ -7,17 +7,17 @@ import pandas as pd
 
 from . import config, global_stats
 from .elo import EloState, MatchResult
-from .level import replay_fit
+from .level import season_points
 from .stats import player_stats
 
 
 def replay_frame(df: pd.DataFrame) -> tuple[list[MatchResult], EloState, dict[int, str]]:
-    """Run the season-fit rating engine over the frame. Returns (results, final state, match_id -> ISO date)."""
+    """Score every match with the season fit. Returns (results, final state, match_id -> ISO date)."""
     matches = [
         (int(row.match_id), (row.player_a1, row.player_a2), (row.player_b1, row.player_b2), row.winner)
         for row in df.itertuples(index=False)
     ]
-    results, state = replay_fit(matches)
+    results, state = season_points(matches)
     dates = {int(r.match_id): r.date.strftime("%Y-%m-%d") for r in df.itertuples(index=False)}
     return results, state, dates
 
@@ -53,7 +53,6 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "p_a": round(r.p_a, 4),
             "winner_prob": round(r.p_winner, 4),
             "deltas": {p: round(d, 1) for p, d in r.delta.items()},
-            "elo_before": {p: round(v, 1) for p, v in r.rating_before.items()},
         })
 
     return {
@@ -62,6 +61,7 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "start_rating": config.START_RATING,
             "level_prior_sd": config.LEVEL_PRIOR_SD,
             "level_carry_weight": config.LEVEL_CARRY_WEIGHT,
+            "level_carry_smooth": config.LEVEL_CARRY_SMOOTH,
             "k_new": config.K_NEW,
             "k_established": config.K_ESTABLISHED,
             "k_new_until": config.K_NEW_UNTIL,

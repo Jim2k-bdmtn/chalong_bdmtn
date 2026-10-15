@@ -29,7 +29,12 @@ def leaderboards(pstats: dict[str, dict]) -> dict:
 
 
 def upsets(results: list[MatchResult], dates: dict[int, str]) -> list[dict]:
-    """Every match, most surprising first (lowest pre-match probability for the eventual winner)."""
+    """Every match, most surprising first (lowest win chance for the eventual winner, by today's ratings).
+    "provisional": at least one of the four players is provisional today."""
+    played: dict[str, int] = {}
+    for r in results:
+        for p in r.players:
+            played[p] = played.get(p, 0) + 1
     rows = [
         {
             "match_id": r.match_id,
@@ -37,7 +42,7 @@ def upsets(results: list[MatchResult], dates: dict[int, str]) -> list[dict]:
             "winners": list(r.winners),
             "losers": list(r.losers),
             "winner_prob": round(r.p_winner, 4),
-            "provisional": any(r.matches_before[p] < config.PROVISIONAL_UNTIL for p in r.players),
+            "provisional": any(played[p] < config.PROVISIONAL_UNTIL for p in r.players),
         }
         for r in results
     ]
@@ -55,7 +60,7 @@ def longest_streaks(pstats: dict[str, dict]) -> dict[str, list[dict]]:
 
 
 def form_lists(results: list[MatchResult]) -> dict:
-    """Biggest Elo gain and biggest Elo loss within the league's last FORM_GLOBAL_MATCHES matches."""
+    """Most Elo points won and lost within the league's last FORM_GLOBAL_MATCHES matches."""
     recent = results[-config.FORM_GLOBAL_MATCHES:]
     gain: dict[str, float] = {}
     played: dict[str, int] = {}
