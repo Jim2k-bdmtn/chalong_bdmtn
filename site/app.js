@@ -150,6 +150,17 @@
     if (!rows.length) return `<div class="empty">${esc(t('none_yet'))}</div>`;
     return rows.map(r => `<div class="streak-row"><span class="who">${link(r.name)} <small style="color:var(--muted)">${r.wins}-${r.losses}</small></span><span class="len">${pct(r.win_rate)}</span></div>`).join('');
   }
+  function mostPlayedList(rows) {
+    if (!rows.length) return `<div class="empty">${esc(t('none_yet'))}</div>`;
+    return rows.map(r => `<div class="streak-row"><span class="who">${link(r.name)} <small style="color:var(--muted)">${r.wins}-${r.losses}</small></span><span class="len">${r.matches}</span></div>`).join('');
+  }
+  function varietyList(rows, showTop) {
+    if (!rows.length) return `<div class="empty">${esc(t('none_yet'))}</div>`;
+    return rows.map(r => {
+      const note = showTop ? r.top.join(', ') : t('players_met', { n: r.distinct });
+      return `<div class="streak-row"><span class="who">${link(r.name)} <small style="color:var(--muted)">${esc(note)}</small></span><span class="len">${pct(r.top_share)}</span></div>`;
+    }).join('');
+  }
   function twoCol(leftTitle, leftTip, leftBody, rightTitle, rightTip, rightBody) {
     return `<div class="two-col">
         <div><h2>${esc(leftTitle)}${leftTip}</h2><div class="card">${leftBody}</div></div>
@@ -270,11 +281,13 @@
       ${twoCol(t('streaks_win'), tip('tip_streaks_win'), streakList(DATA.streaks_win, 'pos'),
                t('streaks_loss'), tip('tip_streaks_loss'), streakList(DATA.streaks_loss, 'neg'))}
 
-      <div class="two-col">
-        <div><h2>${esc(t('win_rate_best'))}${tip('tip_win_rate_best', { n: CFG.min_win_rate_matches })}</h2>
-          <div class="card">${winRateList(DATA.win_rate_best)}</div></div>
-      </div>
+      ${twoCol(t('win_rate_best'), tip('tip_win_rate_best', { n: CFG.min_win_rate_matches }), winRateList(DATA.win_rate_best),
+               t('most_played'), tip('tip_most_played'), mostPlayedList(DATA.most_played))}
       <p class="sub">${esc(t('win_rate_sub', { n: CFG.min_win_rate_matches }))}</p>
+
+      ${twoCol(t('variety_most'), tip('tip_variety_most', { n: CFG.min_variety_matches, k: CFG.variety_top_n }), varietyList(DATA.variety_most, false),
+               t('variety_least'), tip('tip_variety_least', { n: CFG.min_variety_matches, k: CFG.variety_top_n }), varietyList(DATA.variety_least, true))}
+      <p class="sub">${esc(t('variety_sub', { n: CFG.min_variety_matches, k: CFG.variety_top_n }))}</p>
 
       ${twoCol(t('elo_over_points'), tip('tip_elo_over_points'), rankGapList(DATA.elo_over_points),
                t('points_over_elo'), tip('tip_points_over_elo'), rankGapList(DATA.points_over_elo))}

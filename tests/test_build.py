@@ -109,6 +109,17 @@ def test_points_and_leaderboards_consistent(season):
     assert [r["win_rate"] for r in best] == sorted((r["win_rate"] for r in best), reverse=True)
     for r in best:
         assert r["matches"] >= config.MIN_WIN_RATE_MATCHES and r["wins"] + r["losses"] == r["matches"]
+    most = payload["most_played"]
+    assert 0 < len(most) <= config.TOP_MOST_PLAYED
+    assert most[0]["matches"] == max(p["matches"] for p in payload["players"].values())
+    assert [r["matches"] for r in most] == sorted((r["matches"] for r in most), reverse=True)
+    varied, repeated = payload["variety_most"], payload["variety_least"]
+    assert 0 < len(varied) <= config.TOP_VARIETY and 0 < len(repeated) <= config.TOP_VARIETY
+    assert [r["top_share"] for r in varied] == sorted(r["top_share"] for r in varied)
+    assert [r["top_share"] for r in repeated] == sorted((r["top_share"] for r in repeated), reverse=True)
+    for r in varied + repeated:
+        assert r["matches"] >= config.MIN_VARIETY_MATCHES and len(r["top"]) == config.VARIETY_TOP_N
+        assert 0 < r["top_share"] <= 1 and r["name"] not in r["top"]
 
 
 def test_render_embeds_valid_json(season, tmp_path):

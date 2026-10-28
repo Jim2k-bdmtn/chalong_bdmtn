@@ -78,6 +78,9 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
             "min_rank_gap_matches": config.MIN_RANK_GAP_MATCHES,
             "top_win_rate": config.TOP_WIN_RATE,
             "min_win_rate_matches": config.MIN_WIN_RATE_MATCHES,
+            "top_most_played": config.TOP_MOST_PLAYED,
+            "min_variety_matches": config.MIN_VARIETY_MATCHES,
+            "variety_top_n": config.VARIETY_TOP_N,
             "top_points_chart": config.TOP_POINTS_CHART,
         },
         "players": pstats,
@@ -87,5 +90,7 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
         **_form(results, dates),
         **global_stats.rank_gap_lists(pstats),
         **global_stats.win_rate_lists(pstats),
+        **global_stats.most_played_list(pstats),
+        **global_stats.variety_lists(results),
         "matches": match_rows,
     }

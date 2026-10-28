@@ -1,6 +1,6 @@
 import pytest
 
-from badminton_stats import config
+from badminton_stats import config, global_stats
 from badminton_stats.elo import replay
 from badminton_stats.stats import notable_matches, opponent_table, p_win_now, player_stats, streaks
 
@@ -129,3 +129,21 @@ def test_p_win_now_uses_carry_weighted_pairs():
     assert p_win_now("me", r, today) == pytest.approx(expected(1100, team_rating(1200, 1000)))
     assert p_win_now("me", r, today) < 0.5
     assert p_win_now("me", r, today) + p_win_now("x", r, today) == pytest.approx(1.0)
+
+
+def test_variety_counts_partner_and_both_opponents(monkeypatch):
+    monkeypatch.setattr(config, "MIN_VARIETY_MATCHES", 2)
+    monkeypatch.setattr(config, "VARIETY_TOP_N", 2)
+    # "me" meets a, b, x twice, then c, d, e once: 9 spots, the top 2 (a, b) fill 4 of them.
+    # "x" only ever meets me, a and b: 6 spots, the top 2 fill 4.
+    matches = [(1, ("me", "a"), ("b", "x"), "A"),
+               (2, ("me", "b"), ("a", "x"), "B"),
+               (3, ("me", "c"), ("d", "e"), "A")]
+    results, _ = replay(matches)
+    out = global_stats.variety_lists(results)
+    rows = {r["name"]: r for r in out["variety_most"] + out["variety_least"]}
+    assert set(rows) == {"me", "a", "b", "x"}     # c, d, e played only once
+    me, x = rows["me"], rows["x"]
+    assert me["distinct"] == 6 and me["top"] == ["a", "b"] and me["top_share"] == pytest.approx(4 / 9, abs=1e-4)
+    assert x["distinct"] == 3 and x["top_share"] == pytest.approx(4 / 6, abs=1e-4)
+    assert out["variety_most"][0]["name"] == "me"

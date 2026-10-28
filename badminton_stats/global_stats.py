@@ -1,6 +1,8 @@
 """League-wide tables: leaderboards, upsets, longest streaks."""
 from __future__ import annotations
 
+from collections import Counter
+
 from . import config
 from .elo import MatchResult
 
@@ -102,4 +104,39 @@ def win_rate_lists(pstats: dict[str, dict]) -> dict[str, list[dict]]:
     ]
     best = sorted(rows, key=lambda r: (-r["win_rate"], -r["matches"], r["name"]))
     return {"win_rate_best": best[:config.TOP_WIN_RATE]}
+
+
+def most_played_list(pstats: dict[str, dict]) -> dict[str, list[dict]]:
+    """The TOP_MOST_PLAYED players with the most matches. Ties go to more wins, then by name."""
+    rows = [
+        {"name": s["name"], "matches": s["matches"], "wins": s["wins"], "losses": s["losses"]}
+        for s in pstats.values() if s["matches"] > 0
+    ]
+    rows.sort(key=lambda r: (-r["matches"], -r["wins"], r["name"]))
+    return {"most_played": rows[:config.TOP_MOST_PLAYED]}
+
+
+def variety_lists(results: list[MatchResult]) -> dict[str, list[dict]]:
+    """Who mixes the most / least. Each match gives a player 3 spots: 1 partner and 2 opponents.
+    top_share = share of all those spots filled by the player's VARIETY_TOP_N most frequent co-players
+    (low = varied, high = always the same people). Only players with MIN_VARIETY_MATCHES+ matches."""
+    met: dict[str, Counter] = {}
+    played: dict[str, int] = {}
+    for r in results:
+        for p in r.players:
+            c = met.setdefault(p, Counter())
+            c[r.partner_of(p)] += 1
+            c.update(r.opponents_of(p))
+            played[p] = played.get(p, 0) + 1
+    rows = []
+    for p, c in met.items():
+        if played[p] < config.MIN_VARIETY_MATCHES:
+            continue
+        top = sorted(c.items(), key=lambda kv: (-kv[1], kv[0]))[:config.VARIETY_TOP_N]
+        rows.append({"name": p, "matches": played[p], "distinct": len(c),
+                     "top": [name for name, _ in top],
+                     "top_share": round(sum(n for _, n in top) / sum(c.values()), 4)})
+    varied = sorted(rows, key=lambda r: (r["top_share"], -r["distinct"], r["name"]))
+    repeated = sorted(rows, key=lambda r: (-r["top_share"], r["distinct"], r["name"]))
+    return {"variety_most": varied[:config.TOP_VARIETY], "variety_least": repeated[:config.TOP_VARIETY]}
 

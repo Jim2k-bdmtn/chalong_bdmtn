@@ -24,6 +24,10 @@ TOP_RANK_GAP = 3          # players shown in each Elo-vs-points list
 MIN_RANK_GAP_MATCHES = 5  # matches needed to appear in the Elo-vs-points lists
 TOP_WIN_RATE = 5          # players shown in the best win-rate list
 MIN_WIN_RATE_MATCHES = 5  # matches needed to appear in the best win-rate list
+TOP_MOST_PLAYED = 5       # players shown in the most-matches-played list
+TOP_VARIETY = 5           # players shown in each varied / repeated partners-and-opponents list
+MIN_VARIETY_MATCHES = 10  # matches needed to appear in the varied / repeated lists
+VARIETY_TOP_N = 3         # variety = share of partner+opponent spots filled by a player's N most frequent co-players
 TOP_POINTS_CHART = 5      # players drawn in the points-race chart on the home page
 
 REQUIRED_COLUMNS = [
