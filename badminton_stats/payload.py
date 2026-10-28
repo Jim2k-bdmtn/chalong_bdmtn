@@ -91,6 +91,6 @@ def build_payload(df: pd.DataFrame, players: list[str]) -> dict:
         **global_stats.rank_gap_lists(pstats),
         **global_stats.win_rate_lists(pstats),
         **global_stats.most_played_list(pstats),
-        **global_stats.variety_lists(results),
+        **global_stats.variety_lists(pstats),
         "matches": match_rows,
     }

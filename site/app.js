@@ -350,6 +350,10 @@
       o ? `${link(o.name)} <small>${o.wins}-${o.losses}</small>` : `<small>${esc(t('none'))}</small>`,
       { tip: tip(key, { n: CFG.min_opponent_matches }) });
 
+    const v = p.variety;
+    const shareRange = { k: CFG.variety_top_n, n: CFG.min_variety_matches,
+      lo: pct((DATA.variety_most[0] || {}).top_share), hi: pct((DATA.variety_least[0] || {}).top_share) };
+
     const cards = items => items.map(x => matchCard(MATCH_BY_ID[x.match_id], name)).join('') || `<div class="card empty">${esc(t('none_yet'))}</div>`;
     const recent = DATA.matches.filter(m => m.a.includes(name) || m.b.includes(name)).slice(-3).reverse();
 
@@ -371,6 +375,8 @@
         ${statCard(t('low_elo'), p.low_elo ? `${Math.round(p.low_elo.value)} <small>${esc(p.low_elo.date)}</small>` : t('none'), { tip: tip('tip_low_elo') })}
         ${statCard(t('avg_opponent'), p.avg_opponent_elo == null ? t('none') : Math.round(p.avg_opponent_elo), { tip: tip('tip_avg_opponent') })}
         ${statCard(t('avg_partner'), p.avg_partner_elo == null ? t('none') : Math.round(p.avg_partner_elo), { tip: tip('tip_avg_partner') })}
+        ${statCard(t('players_met_label'), v ? v.distinct : t('none'), { tip: tip('tip_players_met') })}
+        ${statCard(t('same_players'), v ? `${pct(v.top_share)} <small>${esc(v.top.join(', '))}</small>` : t('none'), { tip: tip('tip_same_players', shareRange) })}
       </div>
       <div class="card"><div class="label" style="font-size:12px;color:var(--muted)">${esc(t('form', { n: CFG.form_length }))}${tip('tip_form', { n: CFG.form_length })}</div>${form}</div>
 

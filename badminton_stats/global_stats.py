@@ -1,8 +1,6 @@
 """League-wide tables: leaderboards, upsets, longest streaks."""
 from __future__ import annotations
 
-from collections import Counter
-
 from . import config
 from .elo import MatchResult
 
@@ -80,13 +78,14 @@ def form_lists(results: list[MatchResult]) -> dict:
 
 def rank_gap_lists(pstats: dict[str, dict]) -> dict[str, list[dict]]:
     """Players whose Elo rank is better than their points rank, and the reverse.
-    gap = points_rank - elo_rank (positive: Elo says they are better than the points table does)."""
+    Both ranks count only Elo-ranked players, so rank_points here is the points-table order among
+    them (not the league-wide rank_points). gap = points_rank - elo_rank (positive: Elo says they
+    are better than the points table does)."""
+    ranked = sorted((s for s in pstats.values() if s.get("rank_elo") is not None), key=lambda s: s["rank_points"])
     rows = [
-        {"name": s["name"], "rank_points": s["rank_points"], "rank_elo": s["rank_elo"],
-         "gap": s["rank_points"] - s["rank_elo"]}
-        for s in pstats.values()
-        if s["matches"] >= config.MIN_RANK_GAP_MATCHES and s.get("rank_elo") is not None
-        and s.get("rank_points") is not None
+        {"name": s["name"], "rank_points": rank, "rank_elo": s["rank_elo"], "gap": rank - s["rank_elo"]}
+        for rank, s in enumerate(ranked, 1)
+        if s["matches"] >= config.MIN_RANK_GAP_MATCHES
     ]
     elo_better = sorted((r for r in rows if r["gap"] > 0), key=lambda r: (-r["gap"], r["rank_elo"], r["name"]))
     points_better = sorted((r for r in rows if r["gap"] < 0), key=lambda r: (r["gap"], r["rank_points"], r["name"]))
@@ -116,26 +115,12 @@ def most_played_list(pstats: dict[str, dict]) -> dict[str, list[dict]]:
     return {"most_played": rows[:config.TOP_MOST_PLAYED]}
 
 
-def variety_lists(results: list[MatchResult]) -> dict[str, list[dict]]:
-    """Who mixes the most / least. Each match gives a player 3 spots: 1 partner and 2 opponents.
-    top_share = share of all those spots filled by the player's VARIETY_TOP_N most frequent co-players
-    (low = varied, high = always the same people). Only players with MIN_VARIETY_MATCHES+ matches."""
-    met: dict[str, Counter] = {}
-    played: dict[str, int] = {}
-    for r in results:
-        for p in r.players:
-            c = met.setdefault(p, Counter())
-            c[r.partner_of(p)] += 1
-            c.update(r.opponents_of(p))
-            played[p] = played.get(p, 0) + 1
-    rows = []
-    for p, c in met.items():
-        if played[p] < config.MIN_VARIETY_MATCHES:
-            continue
-        top = sorted(c.items(), key=lambda kv: (-kv[1], kv[0]))[:config.VARIETY_TOP_N]
-        rows.append({"name": p, "matches": played[p], "distinct": len(c),
-                     "top": [name for name, _ in top],
-                     "top_share": round(sum(n for _, n in top) / sum(c.values()), 4)})
+def variety_lists(pstats: dict[str, dict]) -> dict[str, list[dict]]:
+    """Who mixes the most / least (see stats.variety), among players with MIN_VARIETY_MATCHES+ matches."""
+    rows = [
+        {"name": s["name"], "matches": s["matches"], **s["variety"]}
+        for s in pstats.values() if s["matches"] >= config.MIN_VARIETY_MATCHES
+    ]
     varied = sorted(rows, key=lambda r: (r["top_share"], -r["distinct"], r["name"]))
     repeated = sorted(rows, key=lambda r: (-r["top_share"], r["distinct"], r["name"]))
     return {"variety_most": varied[:config.TOP_VARIETY], "variety_least": repeated[:config.TOP_VARIETY]}

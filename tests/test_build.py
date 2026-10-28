@@ -102,6 +102,11 @@ def test_points_and_leaderboards_consistent(season):
         assert r["rank_elo"] < r["rank_points"] and payload["players"][r["name"]]["matches"] >= config.MIN_RANK_GAP_MATCHES
     for r in payload["points_over_elo"]:
         assert r["rank_points"] < r["rank_elo"]
+    # Both ranks are taken among Elo-ranked players only, so they live on the same 1..N scale.
+    ranked_by_points = [p for p in payload["leaderboard_points"] if p in payload["leaderboard_elo"]]
+    for r in payload["elo_over_points"] + payload["points_over_elo"]:
+        assert r["rank_points"] == ranked_by_points.index(r["name"]) + 1
+        assert r["rank_elo"] == payload["leaderboard_elo"].index(r["name"]) + 1
     best = payload["win_rate_best"]
     assert 0 < len(best) <= config.TOP_WIN_RATE
     eligible = [p for p in payload["players"].values() if p["matches"] >= config.MIN_WIN_RATE_MATCHES]
@@ -120,6 +125,7 @@ def test_points_and_leaderboards_consistent(season):
     for r in varied + repeated:
         assert r["matches"] >= config.MIN_VARIETY_MATCHES and len(r["top"]) == config.VARIETY_TOP_N
         assert 0 < r["top_share"] <= 1 and r["name"] not in r["top"]
+        assert {k: r[k] for k in ("distinct", "top", "top_share")} == payload["players"][r["name"]]["variety"]
 
 
 def test_render_embeds_valid_json(season, tmp_path):

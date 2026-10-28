@@ -1,7 +1,7 @@
 """Per-player statistics derived from the replayed Elo results."""
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from . import config
 from .elo import EloState, MatchResult, expected
@@ -64,6 +64,21 @@ def opponent_table(player: str, played: list[MatchResult]) -> dict:
     if nemesis is not None and victim is not None and nemesis["name"] == victim["name"]:
         nemesis = victim = None
     return {"rows": rows, "most_faced": most_faced, "nemesis": nemesis, "victim": victim}
+
+
+def variety(player: str, played: list[MatchResult]) -> dict | None:
+    """Each match gives a player 3 spots: 1 partner and 2 opponents. distinct = different people in
+    those spots; top = the VARIETY_TOP_N most frequent; top_share = share of all spots they fill
+    (low = varied, high = always the same people). None for a player with no matches."""
+    met = Counter()
+    for r in played:
+        met[r.partner_of(player)] += 1
+        met.update(r.opponents_of(player))
+    if not met:
+        return None
+    top = sorted(met.items(), key=lambda kv: (-kv[1], kv[0]))[:config.VARIETY_TOP_N]
+    return {"distinct": len(met), "top": [name for name, _ in top],
+            "top_share": round(sum(n for _, n in top) / sum(met.values()), 4)}
 
 
 def p_win_now(player: str, r: MatchResult, rating: dict[str, float]) -> float:
@@ -144,6 +159,7 @@ def player_stats(players: list[str], results: list[MatchResult], state: EloState
             "most_faced": opp["most_faced"],
             "nemesis": opp["nemesis"],
             "victim": opp["victim"],
+            "variety": variety(p, played),
             "last_played": dates[played[-1].match_id] if played else None,
         }
     return out

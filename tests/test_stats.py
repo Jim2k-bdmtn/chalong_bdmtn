@@ -64,6 +64,7 @@ def test_player_stats_points_form_and_histories():
     assert ghost["form"] == [] and ghost["partners"] == [] and ghost["nemesis"] is None
     assert ghost["hardest_wins"] == [] and ghost["easiest_losses"] == []
     assert ghost["peak_elo"] is None and ghost["form_delta"] is None and ghost["avg_partner_elo"] is None
+    assert ghost["variety"] is None
 
 
 def test_partners_most_played_first():
@@ -139,11 +140,13 @@ def test_variety_counts_partner_and_both_opponents(monkeypatch):
     matches = [(1, ("me", "a"), ("b", "x"), "A"),
                (2, ("me", "b"), ("a", "x"), "B"),
                (3, ("me", "c"), ("d", "e"), "A")]
-    results, _ = replay(matches)
-    out = global_stats.variety_lists(results)
-    rows = {r["name"]: r for r in out["variety_most"] + out["variety_least"]}
-    assert set(rows) == {"me", "a", "b", "x"}     # c, d, e played only once
-    me, x = rows["me"], rows["x"]
+    results, state = replay(matches)
+    ps = player_stats(["me", "a", "b", "x", "c", "d", "e"], results, state, {i: "2026-01-01" for i in (1, 2, 3)})
+    me, x = ps["me"]["variety"], ps["x"]["variety"]
     assert me["distinct"] == 6 and me["top"] == ["a", "b"] and me["top_share"] == pytest.approx(4 / 9, abs=1e-4)
     assert x["distinct"] == 3 and x["top_share"] == pytest.approx(4 / 6, abs=1e-4)
-    assert out["variety_most"][0]["name"] == "me"
+    assert ps["c"]["variety"]["distinct"] == 3     # single-match players still get the per-player numbers
+
+    out = global_stats.variety_lists(ps)
+    assert {r["name"] for r in out["variety_most"]} == {"me", "a", "b", "x"}     # c, d, e played only once
+    assert out["variety_most"][0]["name"] == "me" and out["variety_most"][0]["top"] == ["a", "b"]
