@@ -60,7 +60,7 @@ def shares(r1: float, r2: float, carry: float | None = None) -> tuple[float, flo
 
 
 def points_scale() -> float:
-    """Match points per unit of share x (S - E), set by the prior: about 130 for LEVEL_PRIOR_SD = 150."""
+    """Match points per unit of share x (S - E), set by the prior: about 290 for LEVEL_PRIOR_SD = 225."""
     return config.LEVEL_PRIOR_SD ** 2 * _SCALE
 
 
